@@ -1,0 +1,70 @@
+name: prime_school
+description: "PRIME School - AI-Powered Learning App"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.12.0
+  firebase_auth: ^5.4.0
+  cloud_firestore: ^5.6.0
+  firebase_storage: ^12.4.0
+
+  # State Management
+  flutter_bloc: ^8.1.6
+  riverpod: ^2.6.1
+  flutter_riverpod: ^2.6.1
+
+  # UI
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.16
+  cached_network_image: ^3.4.1
+  flip_card: ^0.7.0
+
+  # AI & API
+  dio: ^5.7.0
+  flutter_dotenv: ^5.2.1
+
+  # TTS
+  flutter_tts: ^4.2.2
+  just_audio: ^0.9.42
+
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  shared_preferences: ^2.3.3
+
+  # Utilities
+  uuid: ^4.5.1
+  intl: ^0.19.0
+  path_provider: ^2.1.5
+  image_picker: ^1.1.2
+
+  # Equatable for BLoC
+  equatable: ^2.0.7
+
+  # Provider
+  provider: ^6.1.5
+
+  # Icons
+  ionicons: ^0.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - .env
