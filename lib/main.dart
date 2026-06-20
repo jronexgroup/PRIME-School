@@ -10,6 +10,7 @@ import 'core/services/ai_service.dart';
 import 'core/services/tts_service.dart';
 import 'core/services/cache_service.dart';
 import 'providers/theme_provider.dart';
+import 'providers/api_key_provider.dart';
 import 'blocs/auth/auth_bloc.dart';
 import 'blocs/auth/auth_event.dart';
 import 'blocs/content/content_bloc.dart';
@@ -35,6 +36,7 @@ class PrimeSchoolRoot extends StatelessWidget {
     final storageService = StorageService();
     final aiService = AiService();
     final ttsService = TtsService();
+    final apiKeyProvider = ApiKeyProvider();
 
     return MultiRepositoryProvider(
       providers: [
@@ -66,8 +68,11 @@ class PrimeSchoolRoot extends StatelessWidget {
             create: (_) => ExamBloc(firestoreService: firestoreService),
           ),
         ],
-        child: ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider.value(value: ThemeProvider()),
+            ChangeNotifierProvider.value(value: apiKeyProvider),
+          ],
           child: const PrimeSchoolApp(),
         ),
       ),
