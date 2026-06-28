@@ -16,9 +16,9 @@ class SchoolTechToggle extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.cardLight,
+        color: isDark ? AppColors.cardDark : AppColors.dividerLight,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -69,7 +69,7 @@ class _ToggleOption extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -79,20 +79,20 @@ class _ToggleOption extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 18,
+              size: 15,
               color: isSelected
                   ? Colors.white
-                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                  : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: isSelected
                     ? Colors.white
-                    : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                    : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
               ),
             ),
           ],

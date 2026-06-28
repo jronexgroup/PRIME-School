@@ -43,9 +43,7 @@ class StudyScreen extends StatelessWidget {
               if (!examState.isExamMode) return const SizedBox.shrink();
               return IconButton(
                 icon: const Icon(Icons.bookmark_add_rounded),
-                onPressed: () {
-                  // TODO: Save to exam bank
-                },
+                onPressed: () {},
               );
             },
           ),
@@ -77,7 +75,7 @@ class StudyScreen extends StatelessWidget {
 
     final tabLabels = ['Understand', 'Flashcards', 'Quiz', 'Q&A', 'Chat'];
     final tabIcons = [
-      Icons.lightbulb_outline,
+      Icons.lightbulb_outline_rounded,
       Icons.style_outlined,
       Icons.quiz_outlined,
       Icons.question_answer_outlined,
@@ -85,16 +83,15 @@ class StudyScreen extends StatelessWidget {
     ];
 
     return Container(
-      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 0.5,
           ),
-        ],
+        ),
       ),
       child: Row(
         children: List.generate(tabs.length, (index) {
@@ -104,38 +101,35 @@ class StudyScreen extends StatelessWidget {
               onTap: () {
                 context.read<StudyBloc>().add(StudyTabChanged(tabs[index]));
               },
-              child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: isSelected ? AppColors.primary : Colors.transparent,
-                      width: 2,
-                    ),
-                  ),
+                  color: isSelected
+                      ? AppColors.primary.withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       tabIcons[index],
-                      size: 20,
+                      size: 18,
                       color: isSelected
                           ? AppColors.primary
-                          : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight),
+                          : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       tabLabels[index],
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
                             ? AppColors.primary
-                            : (isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight),
+                            : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                       ),
                     ),
                   ],

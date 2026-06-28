@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/firestore_service.dart';
-import '../../../data/models/exam_bank_model.dart';
 import '../../../data/models/question_model.dart';
 import 'exam_event.dart';
 import 'exam_state.dart';

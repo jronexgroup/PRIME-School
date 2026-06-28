@@ -34,10 +34,10 @@ class QuizTab extends StatelessWidget {
 
   Widget _buildQuizTypeSelector(BuildContext context, bool isDark) {
     final types = [
-      {'type': QuestionType.mcq, 'label': 'MCQ', 'icon': Icons.check_circle_outline},
-      {'type': QuestionType.short, 'label': 'Short', 'icon': Icons.short_text},
-      {'type': QuestionType.medium, 'label': 'Medium', 'icon': Icons.format_list_numbered},
-      {'type': QuestionType.long, 'label': 'Long', 'icon': Icons.notes},
+      {'type': QuestionType.mcq, 'label': 'MCQ', 'icon': Icons.check_circle_outline_rounded},
+      {'type': QuestionType.short, 'label': 'Short', 'icon': Icons.short_text_rounded},
+      {'type': QuestionType.medium, 'label': 'Medium', 'icon': Icons.format_list_numbered_rounded},
+      {'type': QuestionType.long, 'label': 'Long', 'icon': Icons.notes_rounded},
     ];
 
     return Center(
@@ -48,10 +48,10 @@ class QuizTab extends StatelessWidget {
           children: [
             Icon(
               Icons.quiz_outlined,
-              size: 64,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              size: 48,
+              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Text(
               'Select Quiz Type',
               style: TextStyle(
@@ -61,9 +61,12 @@ class QuizTab extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
+            GridView.count(
+              shrinkWrap: true,
+              crossAxisCount: 2,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              childAspectRatio: 1.2,
               children: types.map((typeInfo) {
                 return GestureDetector(
                   onTap: () {
@@ -72,28 +75,36 @@ class QuizTab extends StatelessWidget {
                         );
                   },
                   child: Container(
-                    width: 100,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(12),
+                      color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+                        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        width: 0.5,
                       ),
                     ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          typeInfo['icon'] as IconData,
-                          size: 32,
-                          color: AppColors.primary,
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            typeInfo['icon'] as IconData,
+                            color: AppColors.primary,
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         Text(
                           typeInfo['label'] as String,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                             color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                           ),
                         ),
@@ -114,33 +125,48 @@ class QuizTab extends StatelessWidget {
     if (question == null) return const SizedBox.shrink();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LinearProgressIndicator(
-            value: (state.currentQuestionIndex + 1) / state.questions.length,
-            backgroundColor: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+          // Progress
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: (state.currentQuestionIndex + 1) / state.questions.length,
+                    backgroundColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    minHeight: 4,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${state.currentQuestionIndex + 1}/${state.questions.length}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Question ${state.currentQuestionIndex + 1} of ${state.questions.length}',
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-            ),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+          // Question
           Text(
             question.question,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
               color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              height: 1.5,
             ),
           ),
           const SizedBox(height: 24),
+          // Options
           if (question.type == QuestionType.mcq && question.options != null)
             ...question.options!.asMap().entries.map((entry) {
               final isSelected = state.answers[state.currentQuestionIndex] == entry.value;
@@ -150,16 +176,18 @@ class QuizTab extends StatelessWidget {
                         QuizAnswerSelected(state.currentQuestionIndex, entry.value),
                       );
                 },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary.withOpacity(0.15)
-                        : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : (isDark ? AppColors.cardDark : AppColors.cardLight),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? AppColors.primary : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+                      color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                      width: isSelected ? 1.5 : 0.5,
                     ),
                   ),
                   child: Row(
@@ -171,7 +199,7 @@ class QuizTab extends StatelessWidget {
                           color: isSelected ? AppColors.primary : Colors.transparent,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isSelected ? AppColors.primary : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                            color: isSelected ? AppColors.primary : (isDark ? AppColors.borderDark : AppColors.borderLight),
                           ),
                         ),
                         child: Center(
@@ -180,7 +208,7 @@ class QuizTab extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                              color: isSelected ? Colors.white : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                             ),
                           ),
                         ),
@@ -205,9 +233,6 @@ class QuizTab extends StatelessWidget {
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Type your answer...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
               onChanged: (value) {
                 context.read<QuizBloc>().add(
@@ -216,31 +241,29 @@ class QuizTab extends StatelessWidget {
               },
             ),
           const SizedBox(height: 24),
+          // Navigation
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (!state.isFirstQuestion)
-                OutlinedButton(
-                  onPressed: () {
-                    context.read<QuizBloc>().add(QuizPreviousQuestion());
-                  },
-                  child: const Text('Previous'),
+                OutlinedButton.icon(
+                  onPressed: () => context.read<QuizBloc>().add(QuizPreviousQuestion()),
+                  icon: const Icon(Icons.chevron_left_rounded, size: 18),
+                  label: const Text('Previous'),
                 )
               else
                 const SizedBox.shrink(),
               if (state.isLastQuestion)
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<QuizBloc>().add(QuizSubmitted());
-                  },
-                  child: const Text('Submit'),
+                ElevatedButton.icon(
+                  onPressed: () => context.read<QuizBloc>().add(QuizSubmitted()),
+                  icon: const Icon(Icons.check_rounded, size: 18),
+                  label: const Text('Submit'),
                 )
               else
-                ElevatedButton(
-                  onPressed: () {
-                    context.read<QuizBloc>().add(QuizNextQuestion());
-                  },
-                  child: const Text('Next'),
+                ElevatedButton.icon(
+                  onPressed: () => context.read<QuizBloc>().add(QuizNextQuestion()),
+                  icon: const Icon(Icons.chevron_right_rounded, size: 18),
+                  label: const Text('Next'),
                 ),
             ],
           ),
@@ -257,28 +280,28 @@ class QuizTab extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: (state.percentage >= 50 ? AppColors.success : AppColors.error).withOpacity(0.1),
+                color: (state.percentage >= 50 ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Center(
                 child: Text(
                   '${state.percentage.toInt()}%',
                   style: TextStyle(
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.w700,
                     color: state.percentage >= 50 ? AppColors.success : AppColors.error,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
               state.percentage >= 50 ? 'Great Job!' : 'Keep Practicing!',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.w700,
                 color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
@@ -287,15 +310,13 @@ class QuizTab extends StatelessWidget {
             Text(
               '${state.score} / ${state.totalMarks} marks',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
               ),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
-              onPressed: () {
-                // TODO: Review answers
-              },
+              onPressed: () {},
               child: const Text('Review Answers'),
             ),
           ],

@@ -51,35 +51,34 @@ class _ChatTabState extends State<ChatTab> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.chat_outlined,
-                        size: 64,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chat_outlined,
+                          size: 32,
+                          color: AppColors.primary,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
                         'Ask anything about this topic',
                         style: TextStyle(
-                          fontSize: 16,
-                          color: isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Text(
-                          'AI answers only from this topic\'s content',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppColors.textSecondaryDark
-                                : AppColors.textSecondaryLight,
-                          ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'AI answers from this topic\'s content only',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                         ),
                       ),
                     ],
@@ -98,7 +97,7 @@ class _ChatTabState extends State<ChatTab> {
                   return Align(
                     alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
-                      margin: const EdgeInsets.only(bottom: 12),
+                      margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
                       constraints: BoxConstraints(
                         maxWidth: MediaQuery.of(context).size.width * 0.8,
@@ -106,18 +105,25 @@ class _ChatTabState extends State<ChatTab> {
                       decoration: BoxDecoration(
                         color: isUser
                             ? AppColors.primary
-                            : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
+                            : (isDark ? AppColors.cardDark : AppColors.cardLight),
                         borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(12),
-                          topRight: const Radius.circular(12),
-                          bottomLeft: Radius.circular(isUser ? 12 : 4),
-                          bottomRight: Radius.circular(isUser ? 4 : 12),
+                          topLeft: const Radius.circular(14),
+                          topRight: const Radius.circular(14),
+                          bottomLeft: Radius.circular(isUser ? 14 : 4),
+                          bottomRight: Radius.circular(isUser ? 4 : 14),
                         ),
+                        border: isUser
+                            ? null
+                            : Border.all(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                width: 0.5,
+                              ),
                       ),
                       child: Text(
                         message['content'] ?? '',
                         style: TextStyle(
                           fontSize: 14,
+                          height: 1.5,
                           color: isUser
                               ? Colors.white
                               : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
@@ -130,66 +136,61 @@ class _ChatTabState extends State<ChatTab> {
             },
           ),
         ),
-        _buildChatInput(isDark),
-      ],
-    );
-  }
-
-  Widget _buildChatInput(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.surfaceDark : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
-                ),
+        // Input
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            border: Border(
+              top: BorderSide(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 0.5,
               ),
-              child: TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  hintText: '💬 Ask anything...',
-                  hintStyle: TextStyle(
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.cardDark : AppColors.dividerLight,
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  border: InputBorder.none,
+                  child: TextField(
+                    controller: _controller,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Ask anything...',
+                      hintStyle: TextStyle(
+                        color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                      ),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
                 ),
-                onSubmitted: (_) => _sendMessage(),
               ),
-            ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
-              onPressed: _sendMessage,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

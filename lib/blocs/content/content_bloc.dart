@@ -1,8 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/firestore_service.dart';
 import '../../../data/models/subject_model.dart';
-import '../../../data/models/chapter_model.dart';
-import '../../../data/models/topic_model.dart';
 import 'content_event.dart';
 import 'content_state.dart';
 

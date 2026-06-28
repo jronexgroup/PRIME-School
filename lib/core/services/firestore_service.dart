@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants/firebase_constants.dart';
 import '../../data/models/user_model.dart';
-import '../../data/models/subject_model.dart';
 import '../../data/models/chapter_model.dart';
 import '../../data/models/topic_model.dart';
 import '../../data/models/progress_model.dart';

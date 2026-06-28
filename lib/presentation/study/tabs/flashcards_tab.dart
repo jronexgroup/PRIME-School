@@ -22,19 +22,15 @@ class FlashcardsTab extends StatelessWidget {
               children: [
                 Icon(
                   Icons.style_outlined,
-                  size: 64,
-                  color: isDark
-                      ? AppColors.textSecondaryDark
-                      : AppColors.textSecondaryLight,
+                  size: 48,
+                  color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'No flashcards available',
                   style: TextStyle(
-                    fontSize: 16,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
+                    fontSize: 14,
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                   ),
                 ),
               ],
@@ -44,46 +40,51 @@ class FlashcardsTab extends StatelessWidget {
 
         return Column(
           children: [
+            const SizedBox(height: 20),
             Expanded(
               child: Center(
                 child: FlipCard(
                   direction: FlipDirection.HORIZONTAL,
-                  front: _buildFlashcard(
+                  front: _buildCard(
                     state.flashcards[state.currentFlashcardIndex].front,
+                    isDark,
                     'Tap to flip',
-                    isDark,
                   ),
-                  back: _buildFlashcard(
+                  back: _buildCard(
                     state.flashcards[state.currentFlashcardIndex].back,
-                    'Tap to flip back',
                     isDark,
+                    'Tap to flip back',
                   ),
                 ),
               ),
             ),
             _buildNavigation(context, state, isDark),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildMarkButtons(context, state, isDark),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
           ],
         );
       },
     );
   }
 
-  Widget _buildFlashcard(String text, String hint, bool isDark) {
+  Widget _buildCard(String text, bool isDark, String hint) {
     return Container(
       width: 300,
       height: 200,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 0.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 5),
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -98,9 +99,8 @@ class FlashcardsTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  height: 1.4,
                 ),
               ),
             ),
@@ -108,10 +108,8 @@ class FlashcardsTab extends StatelessWidget {
           Text(
             hint,
             style: TextStyle(
-              fontSize: 12,
-              color: isDark
-                  ? AppColors.textSecondaryDark
-                  : AppColors.textSecondaryLight,
+              fontSize: 11,
+              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
             ),
           ),
         ],
@@ -123,47 +121,72 @@ class FlashcardsTab extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(
-          onPressed: state.currentFlashcardIndex > 0
-              ? () {
-                  context.read<StudyBloc>().add(
-                        StudyFlashcardFlipped(state.currentFlashcardIndex - 1),
-                      );
-                }
-              : null,
-          icon: Icon(
-            Icons.chevron_left_rounded,
-            color: state.currentFlashcardIndex > 0
-                ? AppColors.primary
-                : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+        _buildNavButton(
+          context,
+          icon: Icons.chevron_left_rounded,
+          enabled: state.currentFlashcardIndex > 0,
+          onTap: () {
+            context.read<StudyBloc>().add(
+                  StudyFlashcardFlipped(state.currentFlashcardIndex - 1),
+                );
+          },
+          isDark: isDark,
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.dividerLight,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            '${state.currentFlashcardIndex + 1} / ${state.flashcards.length}',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+            ),
           ),
         ),
-        Text(
-          '${state.currentFlashcardIndex + 1} / ${state.flashcards.length}',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: isDark
-                ? AppColors.textPrimaryDark
-                : AppColors.textPrimaryLight,
-          ),
-        ),
-        IconButton(
-          onPressed: state.currentFlashcardIndex < state.flashcards.length - 1
-              ? () {
-                  context.read<StudyBloc>().add(
-                        StudyFlashcardFlipped(state.currentFlashcardIndex + 1),
-                      );
-                }
-              : null,
-          icon: Icon(
-            Icons.chevron_right_rounded,
-            color: state.currentFlashcardIndex < state.flashcards.length - 1
-                ? AppColors.primary
-                : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
-          ),
+        _buildNavButton(
+          context,
+          icon: Icons.chevron_right_rounded,
+          enabled: state.currentFlashcardIndex < state.flashcards.length - 1,
+          onTap: () {
+            context.read<StudyBloc>().add(
+                  StudyFlashcardFlipped(state.currentFlashcardIndex + 1),
+                );
+          },
+          isDark: isDark,
         ),
       ],
+    );
+  }
+
+  Widget _buildNavButton(
+    BuildContext context, {
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.dividerLight,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: enabled
+              ? AppColors.primary
+              : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+        ),
+      ),
     );
   }
 
@@ -186,7 +209,7 @@ class FlashcardsTab extends StatelessWidget {
           },
           isDark: isDark,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         _buildMarkButton(
           context,
           icon: Icons.check_circle_rounded,
@@ -200,7 +223,7 @@ class FlashcardsTab extends StatelessWidget {
           },
           isDark: isDark,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         _buildMarkButton(
           context,
           icon: Icons.replay_rounded,
@@ -229,26 +252,35 @@ class FlashcardsTab extends StatelessWidget {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? color.withOpacity(0.2) : Colors.transparent,
+          color: isActive ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isActive ? color : (isDark ? AppColors.dividerDark : AppColors.dividerLight),
+            color: isActive ? color : (isDark ? AppColors.borderDark : AppColors.borderLight),
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: isActive ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight)),
-            const SizedBox(width: 6),
+            Icon(
+              icon,
+              size: 16,
+              color: isActive
+                  ? color
+                  : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+            ),
+            const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: isActive ? color : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isActive
+                    ? color
+                    : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
               ),
             ),
           ],

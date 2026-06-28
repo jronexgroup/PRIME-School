@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../providers/theme_provider.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/services/auth_service.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_event.dart';
 import '../../blocs/auth/auth_state.dart';
@@ -22,35 +20,44 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Logo
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: const Center(
                     child: Text(
                       '🎓',
-                      style: TextStyle(fontSize: 48),
+                      style: TextStyle(fontSize: 40),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 28),
                 Text(
                   'PRIME School',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 30,
                     fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   'AI-Powered Learning',
                   style: TextStyle(
-                    fontSize: 16,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    fontSize: 15,
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -62,23 +69,24 @@ class LoginScreen extends StatelessWidget {
 
                     return SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: 52,
                       child: ElevatedButton(
                         onPressed: () {
                           context.read<AuthBloc>().add(AuthSignedIn());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          elevation: 0,
                         ),
                         child: const Text(
                           'Get Started',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -90,7 +98,7 @@ class LoginScreen extends StatelessWidget {
                   'Single user · Personal app',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
                   ),
                 ),
               ],
