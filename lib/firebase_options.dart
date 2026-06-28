@@ -16,22 +16,20 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // TODO: Replace with your Firebase project config
-  // Get these values from Firebase Console > Project Settings > Your Apps
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyDb1mxA6PusHx1f8uhxKMKoVIVGMuykIIE',
+    appId: '1:231477345112:android:6ac5c671747b742899432d',
+    messagingSenderId: '231477345112',
+    projectId: 'prime-school-de654',
+    storageBucket: 'prime-school-de654.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_STORAGE_BUCKET',
+    apiKey: 'AIzaSyDb1mxA6PusHx1f8uhxKMKoVIVGMuykIIE',
+    appId: '1:231477345112:android:6ac5c671747b742899432d',
+    messagingSenderId: '231477345112',
+    projectId: 'prime-school-de654',
+    storageBucket: 'prime-school-de654.firebasestorage.app',
     iosBundleId: 'com.jronex.primeSchool',
   );
 }

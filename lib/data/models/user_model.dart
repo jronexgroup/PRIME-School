@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class UserModel extends Equatable {
   final String uid;
   final String name;
+  final String email;
   final int classLevel;
   final String board;
   final bool isExamMode;
@@ -13,6 +14,7 @@ class UserModel extends Equatable {
   const UserModel({
     required this.uid,
     required this.name,
+    this.email = '',
     this.classLevel = 9,
     this.board = 'WB Madhyamik',
     this.isExamMode = false,
@@ -30,6 +32,7 @@ class UserModel extends Equatable {
 
   UserModel copyWith({
     String? name,
+    String? email,
     int? classLevel,
     String? board,
     bool? isExamMode,
@@ -38,6 +41,7 @@ class UserModel extends Equatable {
     return UserModel(
       uid: uid,
       name: name ?? this.name,
+      email: email ?? this.email,
       classLevel: classLevel ?? this.classLevel,
       board: board ?? this.board,
       isExamMode: isExamMode ?? this.isExamMode,
@@ -51,6 +55,7 @@ class UserModel extends Equatable {
     return {
       'uid': uid,
       'name': name,
+      'email': email,
       'classLevel': classLevel,
       'board': board,
       'isExamMode': isExamMode,
@@ -64,6 +69,7 @@ class UserModel extends Equatable {
     return UserModel(
       uid: map['uid'] ?? '',
       name: map['name'] ?? '',
+      email: map['email'] ?? '',
       classLevel: map['classLevel'] ?? 9,
       board: map['board'] ?? 'WB Madhyamik',
       isExamMode: map['isExamMode'] ?? false,
@@ -81,5 +87,5 @@ class UserModel extends Equatable {
   }
 
   @override
-  List<Object?> get props => [uid, name, classLevel, board, isExamMode, examDate];
+  List<Object?> get props => [uid, name, email, classLevel, board, isExamMode, examDate];
 }
