@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "231477345112",
+    "project_id": "prime-school-de654",
+    "storage_bucket": "prime-school-de654.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:231477345112:android:6ac5c671747b742899432d",
+        "android_client_info": {
+          "package_name": "com.jronex.prime_school"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDb1mxA6PusHx1f8uhxKMKoVIVGMuykIIE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
