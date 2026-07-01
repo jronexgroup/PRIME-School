@@ -46,14 +46,43 @@ class StudyState extends Equatable {
   }
 
   String? get summary => topicContent?['summary'];
-  List<String>? get breakdown => topicContent?['breakdown'] != null
-      ? List<String>.from(topicContent!['breakdown'])
+  List<String>? get simpleBreakdown => topicContent?['simple_breakdown'] != null
+      ? List<String>.from(topicContent!['simple_breakdown'])
       : null;
-  String? get example => topicContent?['example'];
-  Map<String, String>? get keyTerms => topicContent?['keyTerms'] != null
-      ? Map<String, String>.from(topicContent!['keyTerms'])
+  String? get realLifeExample => topicContent?['real_life_example'];
+  List<Map<String, dynamic>>? get keyTerms => topicContent?['key_terms'] != null
+      ? List<Map<String, dynamic>>.from(topicContent!['key_terms'])
       : null;
+  List<Map<String, dynamic>>? get timeline => topicContent?['timeline'] != null
+      ? List<Map<String, dynamic>>.from(topicContent!['timeline'])
+      : null;
+  List<Map<String, dynamic>>? get causeEffect => topicContent?['cause_effect'] != null
+      ? List<Map<String, dynamic>>.from(topicContent!['cause_effect'])
+      : null;
+  List<Map<String, dynamic>>? get importantPersonalities =>
+      topicContent?['important_personalities'] != null
+          ? List<Map<String, dynamic>>.from(topicContent!['important_personalities'])
+          : null;
+  List<Map<String, dynamic>>? get importantPlaces => topicContent?['important_places'] != null
+      ? List<Map<String, dynamic>>.from(topicContent!['important_places'])
+      : null;
+  String? get mapDescription => topicContent?['map_description'];
+  String? get voiceScript => topicContent?['voice_script'];
+  String? get sidebarContent => topicContent?['sidebar_content'];
+  Map<String, dynamic>? get quiz => topicContent?['quiz'] != null
+      ? Map<String, dynamic>.from(topicContent!['quiz'])
+      : null;
+  Map<String, dynamic>? get bookQuestions => topicContent?['book_questions'] != null
+      ? Map<String, dynamic>.from(topicContent!['book_questions'])
+      : null;
+  Map<String, dynamic>? get examBank => topicContent?['exam_bank'] != null
+      ? Map<String, dynamic>.from(topicContent!['exam_bank'])
+      : null;
+  List<dynamic>? get examTips => topicContent?['exam_tips'];
   String? get audioUrl => topicContent?['audioUrl'];
+  Map<String, dynamic>? get importantHighlights => topicContent?['important_highlights'] != null
+      ? Map<String, dynamic>.from(topicContent!['important_highlights'])
+      : null;
 
   @override
   List<Object?> get props => [

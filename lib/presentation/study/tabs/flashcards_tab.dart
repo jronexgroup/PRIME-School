@@ -5,6 +5,7 @@ import '../../../blocs/study/study_bloc.dart';
 import '../../../blocs/study/study_event.dart';
 import '../../../blocs/study/study_state.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../data/models/flashcard_model.dart';
 
 class FlashcardsTab extends StatelessWidget {
   const FlashcardsTab({super.key});
@@ -43,18 +44,27 @@ class FlashcardsTab extends StatelessWidget {
             const SizedBox(height: 20),
             Expanded(
               child: Center(
-                child: FlipCard(
-                  direction: FlipDirection.HORIZONTAL,
-                  front: _buildCard(
-                    state.flashcards[state.currentFlashcardIndex].front,
-                    isDark,
-                    'Tap to flip',
-                  ),
-                  back: _buildCard(
-                    state.flashcards[state.currentFlashcardIndex].back,
-                    isDark,
-                    'Tap to flip back',
-                  ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildTypeBadge(state.flashcards[state.currentFlashcardIndex], isDark),
+                    const SizedBox(height: 8),
+                    FlipCard(
+                      direction: FlipDirection.HORIZONTAL,
+                      front: _buildCard(
+                        state.flashcards[state.currentFlashcardIndex].front,
+                        isDark,
+                        'Tap to flip',
+                      ),
+                      back: _buildCard(
+                        state.flashcards[state.currentFlashcardIndex].back,
+                        isDark,
+                        'Tap to flip back',
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildImportanceBadge(state.flashcards[state.currentFlashcardIndex], isDark),
+                  ],
                 ),
               ),
             ),
@@ -113,6 +123,28 @@ class FlashcardsTab extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypeBadge(FlashcardModel fc, bool isDark) {
+    final colors = {
+      'date': AppColors.primary,
+      'person': Colors.teal,
+      'place': Colors.orange,
+      'concept': Colors.purple,
+      'definition': Colors.blue,
+    };
+    final color = colors[fc.type] ?? AppColors.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        fc.type.toUpperCase(),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
       ),
     );
   }
@@ -238,6 +270,37 @@ class FlashcardsTab extends StatelessWidget {
           isDark: isDark,
         ),
       ],
+    );
+  }
+
+  Widget _buildImportanceBadge(FlashcardModel fc, bool isDark) {
+    final colors = {
+      'high': AppColors.warning,
+      'medium': AppColors.primary,
+      'low': AppColors.textTertiaryLight,
+    };
+    final color = colors[fc.importance] ?? AppColors.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            fc.importance == 'high' ? Icons.arrow_upward : (fc.importance == 'low' ? Icons.arrow_downward : Icons.remove),
+            size: 12,
+            color: color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            fc.importance == 'high' ? 'HIGH' : (fc.importance == 'low' ? 'LOW' : 'MEDIUM'),
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
+      ),
     );
   }
 

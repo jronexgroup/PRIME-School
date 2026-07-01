@@ -11,10 +11,12 @@ class FlashcardModel extends Equatable {
   final bool isKnown;
   final bool isImportant;
   final bool needsReview;
+  final String type;
+  final String importance;
 
   const FlashcardModel({
-    required this.id,
-    required this.topicId,
+    this.id = '',
+    this.topicId = '',
     required this.front,
     required this.back,
     this.bengaliFront,
@@ -23,6 +25,8 @@ class FlashcardModel extends Equatable {
     this.isKnown = false,
     this.isImportant = false,
     this.needsReview = false,
+    this.type = 'concept',
+    this.importance = 'medium',
   });
 
   factory FlashcardModel.fromMap(Map<String, dynamic> map) {
@@ -37,6 +41,8 @@ class FlashcardModel extends Equatable {
       isKnown: map['isKnown'] ?? false,
       isImportant: map['isImportant'] ?? false,
       needsReview: map['needsReview'] ?? false,
+      type: map['type'] ?? 'concept',
+      importance: map['importance'] ?? 'medium',
     );
   }
 
@@ -52,6 +58,8 @@ class FlashcardModel extends Equatable {
       'isKnown': isKnown,
       'isImportant': isImportant,
       'needsReview': needsReview,
+      'type': type,
+      'importance': importance,
     };
   }
 
@@ -71,6 +79,8 @@ class FlashcardModel extends Equatable {
       isKnown: isKnown ?? this.isKnown,
       isImportant: isImportant ?? this.isImportant,
       needsReview: needsReview ?? this.needsReview,
+      type: type,
+      importance: importance,
     );
   }
 
