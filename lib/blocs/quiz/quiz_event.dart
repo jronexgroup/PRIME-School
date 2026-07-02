@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../data/models/question_model.dart';
 
 abstract class QuizEvent extends Equatable {
   const QuizEvent();
@@ -9,21 +8,22 @@ abstract class QuizEvent extends Equatable {
 }
 
 class QuizStarted extends QuizEvent {
-  final String topicId;
-  final QuestionType type;
-  const QuizStarted(this.topicId, this.type);
+  final List<Map<String, dynamic>> questions;
+  final int totalMarks;
+  const QuizStarted(this.questions, this.totalMarks);
 
   @override
-  List<Object> get props => [topicId, type];
+  List<Object> get props => [questions, totalMarks];
 }
 
 class QuizAnswerSelected extends QuizEvent {
   final int questionIndex;
   final String answer;
-  const QuizAnswerSelected(this.questionIndex, this.answer);
+  final bool isCorrect;
+  const QuizAnswerSelected(this.questionIndex, this.answer, this.isCorrect);
 
   @override
-  List<Object> get props => [questionIndex, answer];
+  List<Object> get props => [questionIndex, answer, isCorrect];
 }
 
 class QuizSubmitted extends QuizEvent {}
@@ -31,3 +31,5 @@ class QuizSubmitted extends QuizEvent {}
 class QuizNextQuestion extends QuizEvent {}
 
 class QuizPreviousQuestion extends QuizEvent {}
+
+class QuizReset extends QuizEvent {}

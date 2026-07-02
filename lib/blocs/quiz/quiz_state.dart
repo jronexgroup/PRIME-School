@@ -1,50 +1,49 @@
 import 'package:equatable/equatable.dart';
-import '../../../data/models/question_model.dart';
 
 class QuizState extends Equatable {
-  final List<QuestionModel> questions;
+  final List<Map<String, dynamic>> questions;
   final int currentQuestionIndex;
   final Map<int, String> answers;
+  final Map<int, bool> correctness;
   final bool isSubmitted;
   final int? score;
   final int totalMarks;
   final bool isLoading;
-  final String? error;
 
   const QuizState({
     this.questions = const [],
     this.currentQuestionIndex = 0,
     this.answers = const {},
+    this.correctness = const {},
     this.isSubmitted = false,
     this.score,
     this.totalMarks = 0,
     this.isLoading = false,
-    this.error,
   });
 
   QuizState copyWith({
-    List<QuestionModel>? questions,
+    List<Map<String, dynamic>>? questions,
     int? currentQuestionIndex,
     Map<int, String>? answers,
+    Map<int, bool>? correctness,
     bool? isSubmitted,
     int? score,
     int? totalMarks,
     bool? isLoading,
-    String? error,
   }) {
     return QuizState(
       questions: questions ?? this.questions,
       currentQuestionIndex: currentQuestionIndex ?? this.currentQuestionIndex,
       answers: answers ?? this.answers,
+      correctness: correctness ?? this.correctness,
       isSubmitted: isSubmitted ?? this.isSubmitted,
       score: score,
       totalMarks: totalMarks ?? this.totalMarks,
       isLoading: isLoading ?? this.isLoading,
-      error: error,
     );
   }
 
-  QuestionModel? get currentQuestion =>
+  Map<String, dynamic>? get currentQuestion =>
       currentQuestionIndex < questions.length
           ? questions[currentQuestionIndex]
           : null;
@@ -60,10 +59,10 @@ class QuizState extends Equatable {
         questions,
         currentQuestionIndex,
         answers,
+        correctness,
         isSubmitted,
         score,
         totalMarks,
         isLoading,
-        error,
       ];
 }

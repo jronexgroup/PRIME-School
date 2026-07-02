@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/services/firestore_service.dart';
 import '../../../core/services/ai_service.dart';
 import '../../../core/services/tts_service.dart';
+import '../../../core/services/sarvam_service.dart';
 import '../../../data/models/flashcard_model.dart';
 import 'study_event.dart';
 import 'study_state.dart';
@@ -10,14 +11,17 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   final FirestoreService _firestoreService;
   final AiService _aiService;
   final TtsService _ttsService;
+  final SarvamService _sarvamService;
 
   StudyBloc({
     required FirestoreService firestoreService,
     required AiService aiService,
     required TtsService ttsService,
+    required SarvamService sarvamService,
   })  : _firestoreService = firestoreService,
         _aiService = aiService,
         _ttsService = ttsService,
+        _sarvamService = sarvamService,
         super(const StudyState()) {
     on<StudyTabChanged>(_onTabChanged);
     on<StudyContentLoaded>(_onContentLoaded);
@@ -59,8 +63,16 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
   Future<void> _onAudioPlayed(
       StudyAudioPlayed event, Emitter<StudyState> emit) async {
     emit(state.copyWith(isAudioPlaying: true));
-    if (state.audioUrl != null) {
-      await _ttsService.speak(state.summary ?? '');
+    final script = state.voiceScript ?? state.summary;
+    if (script != null && script.isNotEmpty) {
+      if (_sarvamService.hasApiKey) {
+        final audioPath = await _sarvamService.textToSpeech(script);
+        if (audioPath != null) {
+          emit(state.copyWith(isAudioPlaying: true));
+          return;
+        }
+      }
+      await _ttsService.speak(script);
     }
   }
 
@@ -96,7 +108,14 @@ class StudyBloc extends Bloc<StudyEvent, StudyState> {
 
     try {
       final topicContentStr = state.topicContent.toString();
-      final response = await _aiService.chatWithTopic(event.message, topicContentStr);
+      String response;
+
+      if (_sarvamService.hasApiKey) {
+        response = await _sarvamService.chat(event.message, topicContentStr);
+      } else {
+        response = await _aiService.chatWithTopic(event.message, topicContentStr);
+      }
+
       final aiMessage = {'role': 'assistant', 'content': response};
       emit(state.copyWith(
         chatMessages: [...updatedMessages, aiMessage],

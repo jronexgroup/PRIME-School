@@ -8,6 +8,7 @@ import 'core/services/firestore_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/ai_service.dart';
 import 'core/services/tts_service.dart';
+import 'core/services/sarvam_service.dart';
 import 'core/services/cache_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/api_key_provider.dart';
@@ -36,6 +37,7 @@ class PrimeSchoolRoot extends StatelessWidget {
     final storageService = StorageService();
     final aiService = AiService();
     final ttsService = TtsService();
+    final sarvamService = SarvamService();
     final apiKeyProvider = ApiKeyProvider();
 
     return MultiRepositoryProvider(
@@ -45,6 +47,7 @@ class PrimeSchoolRoot extends StatelessWidget {
         RepositoryProvider.value(value: storageService),
         RepositoryProvider.value(value: aiService),
         RepositoryProvider.value(value: ttsService),
+        RepositoryProvider.value(value: sarvamService),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -59,10 +62,11 @@ class PrimeSchoolRoot extends StatelessWidget {
               firestoreService: firestoreService,
               aiService: aiService,
               ttsService: ttsService,
+              sarvamService: sarvamService,
             ),
           ),
           BlocProvider(
-            create: (_) => QuizBloc(aiService: aiService),
+            create: (_) => QuizBloc(),
           ),
           BlocProvider(
             create: (_) => ExamBloc(firestoreService: firestoreService),
