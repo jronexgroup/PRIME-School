@@ -357,11 +357,18 @@ class _ProgressTabState extends State<ProgressTab> {
                             color: isCurrent ? AppColors.tech.withValues(alpha: 0.08) : (isPassed ? AppColors.success.withValues(alpha: 0.05) : Colors.transparent),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Text(name, style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                            color: isCurrent ? AppColors.tech : (isPassed ? AppColors.success : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
-                          )),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(name, style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+                                  color: isCurrent ? AppColors.tech : (isPassed ? AppColors.success : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
+                                )),
+                              ),
+
+                            ],
+                          ),
                         ),
                       ),
                     ],

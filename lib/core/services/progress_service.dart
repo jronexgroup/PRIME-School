@@ -39,6 +39,69 @@ class ProgressService {
         'lastStudyDate': null,
       };
 
+  Future<void> saveChallengeSubmission(
+    String subjectId,
+    String challengeKey,
+    String code,
+    String feedback,
+    bool solved,
+    String difficulty,
+  ) async {
+    final uid = _userId;
+    if (uid == null) return;
+    try {
+      await _docRef(subjectId).update({
+        'challengeSubmissions.$challengeKey': {
+          'code': code,
+          'feedback': feedback,
+          'solved': solved,
+          'difficulty': difficulty,
+        },
+      });
+    } catch (_) {
+      await _docRef(subjectId).set({
+        'challengeSubmissions': {
+          challengeKey: {
+            'code': code,
+            'feedback': feedback,
+            'solved': solved,
+            'difficulty': difficulty,
+          },
+        },
+        'completedChallenges': <String>[],
+        'completedTopics': <String>[],
+        'completedChapters': <String>[],
+        'challengeStats': {'easy': 0, 'medium': 0, 'hard': 0},
+        'streak': 0,
+        'lastStudyDate': null,
+      }, SetOptions(merge: true));
+    }
+  }
+
+  Future<Map<String, dynamic>> getChallengeSubmissions(String subjectId) async {
+    try {
+      final data = await getProgress(subjectId);
+      return Map<String, dynamic>.from(data['challengeSubmissions'] ?? {});
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> resetTopic(String subjectId, String topicId) async {
+    try {
+      final docRef = _docRef(subjectId);
+      await _firestore.runTransaction((transaction) async {
+        final doc = await transaction.get(docRef);
+        if (!doc.exists) return;
+        final raw = doc.data();
+        if (raw is! Map<String, dynamic>) return;
+        final completedTopics = List<String>.from(raw['completedTopics'] ?? []);
+        completedTopics.remove(topicId);
+        transaction.update(docRef, {'completedTopics': completedTopics});
+      });
+    } catch (_) {}
+  }
+
   Future<void> markChallengeComplete(String subjectId, String challengeId, String difficulty) async {
     final uid = _userId;
     if (uid == null) return;

@@ -62,8 +62,8 @@ dependencies:
   # PDF Viewer
   flutter_pdfview: ^1.4.4
 
-  # WebView for YouTube embed
-  webview_flutter: ^4.14.0
+  # YouTube Player (native, no WebView)
+  youtube_player_flutter: ^8.1.2
 
   # Markdown rendering for AI output
   flutter_markdown: ^0.7.7

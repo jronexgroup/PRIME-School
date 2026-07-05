@@ -31,6 +31,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
   final Map<String, bool> _submitted = {};
   final Map<String, String> _aiFeedback = {};
   final Map<String, bool> _checking = {};
+  final Map<String, bool> _solved = {};
   final Map<String, int> _hintLevel = {};
   int _easyDone = 0;
   int _mediumDone = 0;
@@ -40,6 +41,31 @@ class _ChallengeTabState extends State<ChallengeTab> {
   void initState() {
     super.initState();
     _loadStats();
+    _loadSubmissions();
+  }
+
+  Future<void> _loadSubmissions() async {
+    try {
+      final submissions = await context.read<ProgressService>().getChallengeSubmissions('python');
+      final challenges = (widget.content['challenges'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      for (final c in challenges) {
+        final id = c['question'] as String? ?? '';
+        final key = '${widget.chapterId}/${widget.topicId}/$id';
+        final submission = submissions[key] as Map<String, dynamic>?;
+        if (submission != null) {
+          final code = submission['code'] as String? ?? '';
+          final feedback = submission['feedback'] as String? ?? '';
+          final solved = submission['solved'] as bool? ?? false;
+          _codeControllers.putIfAbsent(id, () => TextEditingController(text: code));
+          if (feedback.isNotEmpty) {
+            _aiFeedback[id] = feedback;
+            _submitted[id] = true;
+            _solved[id] = solved;
+          }
+        }
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   Future<void> _loadStats() async {
@@ -93,8 +119,16 @@ class _ChallengeTabState extends State<ChallengeTab> {
     if (data?.text != null) {
       _codeControllers.putIfAbsent(id, () => TextEditingController());
       _codeControllers[id]!.text = data!.text!;
-      setState(() {});
+      if (mounted) setState(() {});
     }
+  }
+
+  Future<void> _saveSubmission(String id, String code, String feedback, bool solved, String difficulty) async {
+    try {
+      final progress = context.read<ProgressService>();
+      final challengeKey = '${widget.chapterId}/${widget.topicId}/$id';
+      await progress.saveChallengeSubmission(widget.subjectId, challengeKey, code, feedback, solved, difficulty);
+    } catch (_) {}
   }
 
   Future<void> _submitChallenge(Map<String, dynamic> challenge) async {
@@ -145,17 +179,31 @@ class _ChallengeTabState extends State<ChallengeTab> {
         await progress.autoCompleteChapter(widget.subjectId, widget.chapterId, chapterTopics);
       }
 
-      setState(() {
-        _aiFeedback[id] = feedback;
-        _submitted[id] = true;
-        _checking[id] = false;
-      });
+      await _saveSubmission(
+        id,
+        code,
+        feedback,
+        isCorrect,
+        difficulty,
+      );
+
+      if (mounted) {
+        setState(() {
+          _aiFeedback[id] = feedback;
+          _submitted[id] = true;
+          _solved[id] = isCorrect;
+          _checking[id] = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _aiFeedback[id] = 'AI feedback unavailable. Check your solution manually.';
-        _submitted[id] = true;
-        _checking[id] = false;
-      });
+      if (mounted) {
+        setState(() {
+          _aiFeedback[id] = 'AI feedback unavailable. Check your solution manually.';
+          _submitted[id] = true;
+          _solved[id] = false;
+          _checking[id] = false;
+        });
+      }
     }
   }
 
@@ -315,6 +363,9 @@ class _ChallengeTabState extends State<ChallengeTab> {
         diffColor = AppColors.success;
     }
 
+    final isSolved = _solved[id] == true;
+    final isSubmitted = _submitted[id] == true;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -322,7 +373,11 @@ class _ChallengeTabState extends State<ChallengeTab> {
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: _submitted[id] == true ? AppColors.success.withValues(alpha: 0.3) : (isDark ? AppColors.borderDark : AppColors.borderLight),
+          color: isSolved
+              ? AppColors.success.withValues(alpha: 0.3)
+              : (isSubmitted
+                  ? AppColors.warning.withValues(alpha: 0.3)
+                  : (isDark ? AppColors.borderDark : AppColors.borderLight)),
           width: 0.5,
         ),
       ),
@@ -343,8 +398,10 @@ class _ChallengeTabState extends State<ChallengeTab> {
                 child: Text(difficulty.toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: diffColor)),
               ),
               const Spacer(),
-              if (_submitted[id] == true)
+              if (isSubmitted && isSolved)
                 const Icon(Icons.check_circle_rounded, size: 18, color: AppColors.success),
+              if (isSubmitted && !isSolved)
+                Icon(Icons.refresh_rounded, size: 18, color: AppColors.warning),
             ],
           ),
           const SizedBox(height: 10),
@@ -385,19 +442,21 @@ class _ChallengeTabState extends State<ChallengeTab> {
                     _showHint(_generateHint(hint, _hintLevel[id]!), _hintLevel[id]!);
                   },
                 ),
-              _ActionChip(
-                icon: Icons.content_paste_rounded,
-                label: 'Paste',
-                color: AppColors.accent,
-                onTap: () => _pasteCode(id),
-              ),
-              _ActionChip(
-                icon: Icons.send_rounded,
-                label: _checking[id] == true ? 'Checking...' : 'Submit',
-                color: AppColors.primary,
-                onTap: _checking[id] == true ? null : () => _submitChallenge(challenge),
-              ),
-              if (solution.isNotEmpty && _submitted[id] == true)
+              if (!isSolved)
+                _ActionChip(
+                  icon: Icons.content_paste_rounded,
+                  label: 'Paste',
+                  color: AppColors.accent,
+                  onTap: () => _pasteCode(id),
+                ),
+              if (!isSolved)
+                _ActionChip(
+                  icon: Icons.send_rounded,
+                  label: _checking[id] == true ? 'Checking...' : 'Retry',
+                  color: AppColors.primary,
+                  onTap: _checking[id] == true ? null : () => _submitChallenge(challenge),
+                ),
+              if (solution.isNotEmpty && isSubmitted)
                 _ActionChip(
                   icon: Icons.compare_arrows_rounded,
                   label: 'Compare',
@@ -413,7 +472,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.08),
+                color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -421,9 +480,31 @@ class _ChallengeTabState extends State<ChallengeTab> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.feedback_rounded, size: 14, color: AppColors.primary),
+                      Icon(Icons.feedback_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
                       const SizedBox(width: 6),
-                      Text('AI Feedback', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                      Text('AI Feedback', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSolved ? AppColors.success : AppColors.warning)),
+                      const Spacer(),
+                      if (isSolved)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('Solved', style: TextStyle(fontSize: 9, color: AppColors.success, fontWeight: FontWeight.w600)),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: () => _submitChallenge(challenge),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('Retry', style: TextStyle(fontSize: 9, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),

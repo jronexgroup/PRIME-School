@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 
 class YoutubeEmbedWidget extends StatefulWidget {
@@ -13,60 +13,54 @@ class YoutubeEmbedWidget extends StatefulWidget {
 }
 
 class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
-  WebViewController? _controller;
-  bool _isLoading = true;
+  YoutubePlayerController? _controller;
+  String? _videoId;
 
   @override
   void initState() {
     super.initState();
-    _initWebView(widget.videoUrl);
+    _initPlayer(widget.videoUrl);
   }
 
   @override
   void didUpdateWidget(YoutubeEmbedWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl) {
-      setState(() => _isLoading = true);
-      _initWebView(widget.videoUrl);
+      _controller?.dispose();
+      _initPlayer(widget.videoUrl);
     }
   }
 
-  void _initWebView(String videoUrl) {
-    final videoId = _extractVideoId(videoUrl);
+  void _initPlayer(String videoUrl) {
+    _videoId = _extractVideoId(videoUrl);
     final startSeconds = _extractTimestamp(videoUrl);
+    if (_videoId == null) return;
 
-    final embedUrl = 'https://www.youtube.com/embed/$videoId'
-        '?autoplay=1'
-        '&start=$startSeconds'
-        '&rel=0'
-        '&modestbranding=1'
-        '&playsinline=1'
-        '&controls=1';
-
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (_) => _isLoading = true,
-        onPageFinished: (_) {
-          if (mounted) setState(() => _isLoading = false);
-        },
-        onWebResourceError: (error) {
-          debugPrint('YouTube WebResourceError: ${error.description} code=${error.errorCode}');
-        },
-      ))
-      ..loadRequest(Uri.parse(embedUrl));
+    _controller = YoutubePlayerController(
+      initialVideoId: _videoId!,
+      flags: YoutubePlayerFlags(
+        autoPlay: true,
+        mute: false,
+        startAt: startSeconds,
+        controlsVisibleAtStart: true,
+      ),
+    );
   }
 
-  String _extractVideoId(String url) {
-    final patterns = [
-      RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
-    ];
-    for (final p in patterns) {
-      final match = p.firstMatch(url);
-      if (match != null) return match.group(1)!;
+  String? _extractVideoId(String url) {
+    final id = YoutubePlayer.convertUrlToId(url);
+    if (id == null) {
+      final patterns = [
+        RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
+      ];
+      for (final p in patterns) {
+        final match = p.firstMatch(url);
+        if (match != null) return match.group(1)!;
+      }
+      debugPrint('YouTube: Could not extract video ID from $url');
+      return 'UrsmFxEIp5k';
     }
-    debugPrint('YouTube: Could not extract video ID from $url, using fallback');
-    return 'UrsmFxEIp5k';
+    return id;
   }
 
   int _extractTimestamp(String url) {
@@ -76,12 +70,12 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
     return ts;
   }
 
+  int _currentPosition() {
+    return _controller?.value.position.inSeconds ?? 0;
+  }
+
   void _openFullscreen() {
-    final videoId = _extractVideoId(widget.videoUrl);
-    final startSeconds = _extractTimestamp(widget.videoUrl);
-    Navigator.push(context, MaterialPageRoute(
-      builder: (_) => _FullscreenVideoPlayer(videoId: videoId, startSeconds: startSeconds),
-    ));
+    _controller?.toggleFullScreenMode();
   }
 
   void _showWatchOptions() {
@@ -114,17 +108,17 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   }
 
   Future<void> _launchYouTube({bool useApp = true}) async {
-    final videoId = _extractVideoId(widget.videoUrl);
-    final startSeconds = _extractTimestamp(widget.videoUrl);
+    if (_videoId == null) return;
+    final startSeconds = _currentPosition();
 
     if (useApp) {
-      final appUri = Uri.parse('youtube://watch?v=$videoId${startSeconds > 0 ? '&t=${startSeconds}s' : ''}');
+      final appUri = Uri.parse('youtube://watch?v=$_videoId${startSeconds > 0 ? '&t=${startSeconds}s' : ''}');
       if (await canLaunchUrl(appUri)) {
         await launchUrl(appUri, mode: LaunchMode.externalApplication);
         return;
       }
     }
-    final webUri = Uri.parse('https://youtu.be/$videoId${startSeconds > 0 ? '?t=$startSeconds' : ''}');
+    final webUri = Uri.parse('https://youtu.be/$_videoId${startSeconds > 0 ? '?t=$startSeconds' : ''}');
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
@@ -135,8 +129,25 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   }
 
   @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_controller == null) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.cardDark : AppColors.cardLight,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Center(child: Text('Could not load video')),
+      );
+    }
 
     return Column(
       children: [
@@ -147,20 +158,11 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
             border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
           ),
           clipBehavior: Clip.antiAlias,
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Stack(
-              children: [
-                if (_controller != null)
-                  WebViewWidget(controller: _controller!),
-                if (_isLoading)
-                  Container(
-                    color: Colors.black87,
-                    child: const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    ),
-                  ),
-              ],
+          child: YoutubePlayerBuilder(
+            player: YoutubePlayer(controller: _controller!),
+            builder: (context, player) => AspectRatio(
+              aspectRatio: 16 / 9,
+              child: player,
             ),
           ),
         ),
@@ -198,46 +200,6 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
           ],
         ),
       ],
-    );
-  }
-}
-
-class _FullscreenVideoPlayer extends StatelessWidget {
-  final String videoId;
-  final int startSeconds;
-
-  const _FullscreenVideoPlayer({required this.videoId, required this.startSeconds});
-
-  @override
-  Widget build(BuildContext context) {
-    final embedUrl = 'https://www.youtube.com/embed/$videoId'
-        '?autoplay=1'
-        '&start=$startSeconds'
-        '&rel=0'
-        '&modestbranding=1'
-        '&playsinline=1'
-        '&controls=1';
-
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Now Playing', style: TextStyle(color: Colors.white, fontSize: 14)),
-      ),
-      body: Center(
-        child: AspectRatio(
-          aspectRatio: 16 / 9,
-          child: WebViewWidget(
-            controller: WebViewController()
-              ..setJavaScriptMode(JavaScriptMode.unrestricted)
-              ..loadRequest(Uri.parse(embedUrl)),
-          ),
-        ),
-      ),
     );
   }
 }
