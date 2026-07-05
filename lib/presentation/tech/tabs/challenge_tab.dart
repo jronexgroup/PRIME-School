@@ -415,23 +415,65 @@ class _ChallengeTabState extends State<ChallengeTab> {
 
   void _showHint(String hintText, int level) {
     final titles = ['Concept Hint', 'Approach Hint', 'Almost Solution'];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.accent.withValues(alpha: 0.08),
+              isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            ],
+            begin: Alignment.topLeft, end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.2)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.lightbulb_outline, color: AppColors.accent),
-                const SizedBox(width: 8),
-                Text(titles[level], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.accent),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titles[level], style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+                    Text('Level ${level + 1} of 3', style: TextStyle(fontSize: 10, color: AppColors.accent)),
+                  ],
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Text(hintText, style: const TextStyle(fontSize: 13, height: 1.5)),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.accent.withValues(alpha: 0.1)),
+              ),
+              child: Text(hintText,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  height: 1.7,
+                ),
+              ),
+            ),
           ],
         ),
       ),

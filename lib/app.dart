@@ -77,6 +77,7 @@ class _MainShellState extends State<MainShell> {
       aiService.setGeminiKeys(apiKeyProvider.geminiKeys);
       aiService.setGroqKeys(apiKeyProvider.groqKeys);
       aiService.setCloudflareWorkerUrl(apiKeyProvider.cloudflareWorkerUrl);
+      aiService.setCloudflareCredentials(apiKeyProvider.cloudflareAccountId, apiKeyProvider.cloudflareApiToken);
     }
   }
 

@@ -8,6 +8,8 @@ class AiService {
   int _currentGeminiKey = 0;
   int _currentGroqKey = 0;
   String _cloudflareWorkerUrl = ApiConstants.cloudflareWorkerUrl;
+  String _cloudflareAccountId = '';
+  String _cloudflareApiToken = '';
 
   void setGeminiKeys(List<String> keys) {
     _geminiKeys.clear();
@@ -27,7 +29,38 @@ class AiService {
     }
   }
 
-  bool get hasAnyKeys => _geminiKeys.isNotEmpty || _groqKeys.isNotEmpty;
+  void setCloudflareCredentials(String accountId, String apiToken) {
+    _cloudflareAccountId = accountId;
+    _cloudflareApiToken = apiToken;
+  }
+
+  bool get hasCloudflareCredentials => _cloudflareAccountId.isNotEmpty && _cloudflareApiToken.isNotEmpty;
+  bool get hasAnyKeys => hasCloudflareCredentials || _geminiKeys.isNotEmpty || _groqKeys.isNotEmpty;
+
+  Future<String> generateWithCloudflareDirect(String prompt, {String? context}) async {
+    final model = '@cf/meta/llama-3.1-8b-instruct';
+    final url = 'https://api.cloudflare.com/client/v4/accounts/$_cloudflareAccountId/ai/run/$model';
+
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': 'You are a helpful Python tutor. Answer in Hinglish (Hindi+English mix) like CodeWithHarry. Be concise and clear.'},
+      {'role': 'user', 'content': context != null ? '$context\n\n$prompt' : prompt},
+    ];
+
+    try {
+      final response = await _dio.post(
+        url,
+        data: {'messages': messages},
+        options: Options(
+          headers: {'Authorization': 'Bearer $_cloudflareApiToken'},
+          receiveTimeout: const Duration(seconds: 60),
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
+      return response.data['result']['response'] as String? ?? '';
+    } on DioException catch (e) {
+      throw Exception('Cloudflare AI error: ${e.response?.statusCode ?? e.message}');
+    }
+  }
 
   Future<String> generateWithGemini(String prompt, {String? context}) async {
     for (var i = 0; i < _geminiKeys.length; i++) {
@@ -76,12 +109,20 @@ class AiService {
   }
 
   Future<String> generate(String prompt, {String? context}) async {
+    if (hasCloudflareCredentials) {
+      try {
+        return await generateWithCloudflareDirect(prompt, context: context);
+      } catch (_) {}
+    }
     try {
       return await generateWithGemini(prompt, context: context);
     } catch (_) {
       try {
         return await generateWithGroq(prompt, context: context);
       } catch (e) {
+        if (hasCloudflareCredentials) {
+          throw Exception('Cloudflare AI failed. Check your Account ID and API Token in Settings.');
+        }
         throw Exception('All AI providers exhausted. Add API keys in Settings.');
       }
     }
@@ -105,11 +146,7 @@ Correct Answer: $correctAnswer
 
 Provide: 1) Is it correct (yes/no) 2) What's wrong 3) Brief explanation in Hinglish
 ''';
-    try {
-      return await generateWithGroq(prompt);
-    } catch (_) {
-      return await generate(prompt);
-    }
+    return generate(prompt);
   }
 
   Future<String> reviewCode(String code, String question) async {

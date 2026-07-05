@@ -389,9 +389,11 @@ class SettingsScreen extends StatelessWidget {
                           if (authState is Authenticated) {
                               try {
                                 await apiKeyProvider.saveKeys(authState.user.uid);
-                                context.read<AiService>().setGeminiKeys(apiKeyProvider.geminiKeys);
-                                context.read<AiService>().setGroqKeys(apiKeyProvider.groqKeys);
-                                context.read<AiService>().setCloudflareWorkerUrl(apiKeyProvider.cloudflareWorkerUrl);
+                                final ai = context.read<AiService>();
+                                ai.setGeminiKeys(apiKeyProvider.geminiKeys);
+                                ai.setGroqKeys(apiKeyProvider.groqKeys);
+                                ai.setCloudflareWorkerUrl(apiKeyProvider.cloudflareWorkerUrl);
+                                ai.setCloudflareCredentials(apiKeyProvider.cloudflareAccountId, apiKeyProvider.cloudflareApiToken);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(

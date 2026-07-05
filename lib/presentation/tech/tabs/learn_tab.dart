@@ -92,20 +92,20 @@ class _LearnTabState extends State<LearnTab> {
           const SizedBox(height: 16),
 
           if (_aiCoachMode) ...[
-            if (aiCoachScript.isNotEmpty)
-              _buildCoachCard(aiCoachScript, isDark),
+            _buildCoachCard(aiCoachScript, isDark),
             const SizedBox(height: 16),
-            _buildSection('Key Points', keyPoints, isDark, Icons.lightbulb_outline, AppColors.accent),
+            _buildKeyPoints(keyPoints, isDark),
             if (keyConcepts.isNotEmpty) ...[
               const SizedBox(height: 16),
-              _buildConceptsGrid(keyConcepts, isDark),
+              _buildConceptsSection(keyConcepts, isDark),
             ],
           ] else ...[
-            if (videoUrl.isNotEmpty)
+            if (videoUrl.isNotEmpty) ...[
               YoutubeEmbedWidget(videoUrl: videoUrl),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
+            ],
             if (keyPoints.isNotEmpty)
-              _buildSection('Key Points', keyPoints, isDark, Icons.lightbulb_outline, AppColors.accent),
+              _buildKeyPoints(keyPoints, isDark),
           ],
         ],
       ),
@@ -115,15 +115,18 @@ class _LearnTabState extends State<LearnTab> {
   Widget _buildCoachCard(String script, bool isDark) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.tech.withValues(alpha: 0.08), AppColors.primary.withValues(alpha: 0.05)],
+          colors: [
+            AppColors.tech.withValues(alpha: 0.12),
+            const Color(0xFF1A1A2E),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.tech.withValues(alpha: 0.2)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.tech.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,66 +134,142 @@ class _LearnTabState extends State<LearnTab> {
           Row(
             children: [
               Container(
-                width: 32, height: 32,
+                width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.tech.withValues(alpha: 0.15),
+                  gradient: LinearGradient(
+                    colors: [AppColors.tech, AppColors.tech.withValues(alpha: 0.6)],
+                  ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.smart_toy_rounded, size: 18, color: AppColors.tech),
+                child: const Icon(Icons.smart_toy_rounded, size: 18, color: Colors.white),
               ),
-              const SizedBox(width: 10),
-              Text('AI Coach', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('AI Coach', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                  Text('CodeWithHarry style', style: TextStyle(fontSize: 10, color: Colors.white54)),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(script, style: TextStyle(fontSize: 13, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, height: 1.7)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, List<String> items, bool isDark, IconData icon, Color color) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
-              Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('• ', style: TextStyle(color: color, fontSize: 13)),
-                Expanded(child: Text(item, style: TextStyle(fontSize: 13, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, height: 1.4))),
-              ],
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
-          )),
+            child: Text(
+              script,
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFFE2E8F0),
+                height: 1.8,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildConceptsGrid(List<String> concepts, bool isDark) {
+  Widget _buildKeyPoints(List<String> points, bool isDark) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.accent.withValues(alpha: 0.08),
+            AppColors.primary.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.accent),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Key Points',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text('${points.length} points', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.accent)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...List.generate(points.length, (i) {
+            final color = _pointColors[i % _pointColors.length];
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 26, height: 26,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text('${i + 1}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      points[i],
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConceptsSection(List<String> concepts, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
       ),
       child: Column(
@@ -198,25 +277,73 @@ class _LearnTabState extends State<LearnTab> {
         children: [
           Row(
             children: [
-              Icon(Icons.psychology_outlined, size: 18, color: AppColors.tech),
-              const SizedBox(width: 8),
-              Text('Key Concepts', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.tech.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.psychology_outlined, size: 18, color: AppColors.tech),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Key Concepts',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Wrap(
-            spacing: 8, runSpacing: 8,
-            children: concepts.map((c) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.tech.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(c, style: TextStyle(fontSize: 12, color: AppColors.tech, height: 1.3)),
-            )).toList(),
+            spacing: 10, runSpacing: 10,
+            children: concepts.map((c) {
+              final color = _conceptColors[concepts.indexOf(c) % _conceptColors.length];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [color.withValues(alpha: 0.12), color.withValues(alpha: 0.04)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: color.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.terminal_rounded, size: 12, color: color),
+                    const SizedBox(width: 6),
+                    Text(c, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color, letterSpacing: 0.2)),
+                  ],
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
   }
+
+  static const _pointColors = [
+    AppColors.tech,
+    AppColors.accent,
+    AppColors.primary,
+    AppColors.warning,
+    AppColors.info,
+    AppColors.success,
+    AppColors.tech,
+  ];
+
+  static const _conceptColors = [
+    Color(0xFFE879F9),
+    Color(0xFFA6E3A1),
+    Color(0xFF89B4FA),
+    Color(0xFFF9E2AF),
+    Color(0xFFF38BA8),
+    Color(0xFF94E2D5),
+  ];
 }
