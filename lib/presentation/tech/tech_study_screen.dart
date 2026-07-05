@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/firestore_service.dart';
+import '../../core/services/progress_service.dart';
 import 'tabs/learn_tab.dart';
 import 'tabs/practice_tab.dart';
 import 'tabs/challenge_tab.dart';
@@ -41,6 +42,36 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
   void initState() {
     super.initState();
     _loadContent();
+    _updateStreak();
+  }
+
+  Future<void> _updateStreak() async {
+    try {
+      await context.read<ProgressService>().updateStreak('python');
+    } catch (_) {}
+  }
+
+  Future<void> _markComplete() async {
+    try {
+      await context.read<ProgressService>().markTopicComplete(
+        'python',
+        widget.topicId,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Topic marked as complete!'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   Future<void> _loadContent() async {
@@ -74,6 +105,12 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
       appBar: AppBar(
         title: Text(widget.topicName, style: const TextStyle(fontSize: 16)),
         actions: [
+          // Mark Complete
+          IconButton(
+            icon: const Icon(Icons.check_circle_outline, size: 20),
+            tooltip: 'Mark Complete',
+            onPressed: _markComplete,
+          ),
           // Handbook button
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),

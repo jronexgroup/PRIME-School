@@ -10,8 +10,8 @@ import 'core/services/ai_service.dart';
 import 'core/services/tts_service.dart';
 import 'core/services/sarvam_service.dart';
 import 'core/services/cache_service.dart';
-import 'core/services/python_executor_service.dart';
 import 'core/services/content_rag_service.dart';
+import 'core/services/progress_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'blocs/auth/auth_bloc.dart';
@@ -41,8 +41,8 @@ class PrimeSchoolRoot extends StatelessWidget {
     final ttsService = TtsService();
     final sarvamService = SarvamService();
     final apiKeyProvider = ApiKeyProvider();
-    final pythonExecutorService = PythonExecutorService();
     final contentRagService = ContentRagService(firestore: firestoreService, ai: aiService);
+    final progressService = ProgressService();
 
     return MultiRepositoryProvider(
       providers: [
@@ -52,8 +52,8 @@ class PrimeSchoolRoot extends StatelessWidget {
         RepositoryProvider.value(value: aiService),
         RepositoryProvider.value(value: ttsService),
         RepositoryProvider.value(value: sarvamService),
-        RepositoryProvider.value(value: pythonExecutorService),
         RepositoryProvider.value(value: contentRagService),
+        RepositoryProvider.value(value: progressService),
       ],
       child: MultiBlocProvider(
         providers: [

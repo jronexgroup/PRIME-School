@@ -38,11 +38,11 @@ class AiService {
   bool get hasAnyKeys => hasCloudflareCredentials || _geminiKeys.isNotEmpty || _groqKeys.isNotEmpty;
 
   Future<String> generateWithCloudflareDirect(String prompt, {String? context}) async {
-    final model = '@cf/meta/llama-3.1-8b-instruct';
+    final model = '@cf/moonshotai/kimi-k2.6';
     final url = 'https://api.cloudflare.com/client/v4/accounts/$_cloudflareAccountId/ai/run/$model';
 
     final messages = <Map<String, String>>[
-      {'role': 'system', 'content': 'You are a helpful Python tutor. Answer in Hinglish (Hindi+English mix) like CodeWithHarry. Be concise and clear.'},
+      {'role': 'system', 'content': 'You are a precise Python tutor. Answer questions directly with accurate code examples. Be concise and factual. Do not roleplay or use fictional quotes.'},
       {'role': 'user', 'content': context != null ? '$context\n\n$prompt' : prompt},
     ];
 
@@ -130,7 +130,7 @@ class AiService {
 
   Future<String> chatWithTopic(String message, String topicContent) async {
     final prompt = '''
-You are a helpful Python tutor. Answer based on this content.
+Answer the user's Python question based on this topic content. Do not add fictional quotes or character voices.
 Question: $message
 Topic Content: $topicContent
 ''';
@@ -139,25 +139,25 @@ Topic Content: $topicContent
 
   Future<String> checkAnswer(String question, String userAnswer, String correctAnswer) async {
     final prompt = '''
-Check this Python answer and provide feedback:
+Check this Python answer and provide feedback in this format:
+✓ CORRECT or ✗ INCORRECT
+Issues:
+Fix:
+
 Question: $question
 User's Answer: $userAnswer
 Correct Answer: $correctAnswer
-
-Provide: 1) Is it correct (yes/no) 2) What's wrong 3) Brief explanation in Hinglish
 ''';
     return generate(prompt);
   }
 
   Future<String> reviewCode(String code, String question) async {
     final prompt = '''
-Review this Python code and provide feedback:
+Review this Python code and provide specific improvement suggestions with before/after code examples.
+
 Question: $question
 Code:
 $code
-
-Provide: 1) Is it correct 2) Code quality 3) Better approach 4) How Harry would write it
-Be constructive and specific.
 ''';
     return generate(prompt);
   }

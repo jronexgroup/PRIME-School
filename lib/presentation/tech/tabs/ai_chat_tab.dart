@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/content_rag_service.dart';
+import '../../shared/widgets/markdown_text.dart';
 
 class AiChatTab extends StatefulWidget {
   final String subjectId;
@@ -30,7 +31,7 @@ class _AiChatTabState extends State<AiChatTab> {
   void initState() {
     super.initState();
     _messages.add(_ChatMessage(
-      text: 'Namaste! Main aapka Python AI Assistant hoon. Aap poochh sakte hain Python ke baare mein kuch bhi — concepts, code examples, syntax, ya projects!',
+      text: 'Hi! I\'m your Python AI Assistant. Ask me anything about Python — concepts, code examples, syntax, or projects!',
       isUser: false,
     ));
   }
@@ -160,13 +161,13 @@ class _AiChatTabState extends State<AiChatTab> {
                             bottomRight: msg.isUser ? Radius.zero : const Radius.circular(12),
                           ),
                         ),
-                        child: Text(msg.text, style: TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: msg.isUser
-                              ? AppColors.primary
-                              : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
-                        )),
+                        child: msg.isUser
+                            ? Text(msg.text, style: TextStyle(
+                                fontSize: 13,
+                                height: 1.5,
+                                color: AppColors.primary,
+                              ))
+                            : MarkdownText(msg.text),
                       ),
                     ),
                     if (msg.isUser) ...[

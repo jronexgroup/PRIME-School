@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/ai_service.dart';
-import '../../../core/services/python_executor_service.dart';
+import '../../../core/services/progress_service.dart';
+import '../../shared/widgets/markdown_text.dart';
 
 class ChallengeTab extends StatefulWidget {
   final Map<String, dynamic> content;
@@ -20,8 +21,6 @@ class _ChallengeTabState extends State<ChallengeTab> {
   final Map<String, String> _aiFeedback = {};
   final Map<String, bool> _checking = {};
   final Map<String, int> _hintLevel = {};
-  final Map<String, String> _outputs = {};
-  final Map<String, bool> _isRunning = {};
   int _easyDone = 0;
   int _mediumDone = 0;
   int _hardDone = 0;
@@ -33,29 +32,29 @@ class _ChallengeTabState extends State<ChallengeTab> {
   }
 
   Future<void> _loadStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _easyDone = prefs.getInt('challenge_easy') ?? 0;
-      _mediumDone = prefs.getInt('challenge_medium') ?? 0;
-      _hardDone = prefs.getInt('challenge_hard') ?? 0;
-    });
+    try {
+      final progress = context.read<ProgressService>().getProgress('python');
+      final data = await progress;
+      final stats = data['challengeStats'] as Map<String, dynamic>? ?? {};
+      setState(() {
+        _easyDone = (stats['easy'] as int? ?? 0);
+        _mediumDone = (stats['medium'] as int? ?? 0);
+        _hardDone = (stats['hard'] as int? ?? 0);
+      });
+    } catch (_) {}
   }
 
   Future<void> _saveStat(String difficulty) async {
-    final prefs = await SharedPreferences.getInstance();
-    if (difficulty == 'easy') {
-      final v = (prefs.getInt('challenge_easy') ?? 0) + 1;
-      await prefs.setInt('challenge_easy', v);
-      _easyDone = v;
-    } else if (difficulty == 'medium') {
-      final v = (prefs.getInt('challenge_medium') ?? 0) + 1;
-      await prefs.setInt('challenge_medium', v);
-      _mediumDone = v;
-    } else {
-      final v = (prefs.getInt('challenge_hard') ?? 0) + 1;
-      await prefs.setInt('challenge_hard', v);
-      _hardDone = v;
-    }
+    try {
+      await context.read<ProgressService>().updateChallengeStat('python', difficulty);
+      if (difficulty == 'easy') {
+        _easyDone++;
+      } else if (difficulty == 'medium') {
+        _mediumDone++;
+      } else {
+        _hardDone++;
+      }
+    } catch (_) {}
   }
 
   @override
@@ -69,7 +68,6 @@ class _ChallengeTabState extends State<ChallengeTab> {
   String _generateHint(String hint, int level) {
     final hints = hint.split('|');
     if (hints.length >= 3) return hints[level].trim();
-    // Generate 3 levels from single hint
     switch (level) {
       case 0:
         return 'Concept: $hint';
@@ -82,22 +80,20 @@ class _ChallengeTabState extends State<ChallengeTab> {
     }
   }
 
-  Future<void> _runCode(String id) async {
-    final code = _codeControllers[id]?.text ?? '';
-    if (code.trim().isEmpty) return;
-    setState(() => _isRunning[id] = true);
-    final executor = context.read<PythonExecutorService>();
-    final result = await executor.executeCode(code);
-    setState(() {
-      _outputs[id] = result;
-      _isRunning[id] = false;
-    });
+  Future<void> _pasteCode(String id) async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) {
+      _codeControllers.putIfAbsent(id, () => TextEditingController());
+      _codeControllers[id]!.text = data!.text!;
+      setState(() {});
+    }
   }
 
   Future<void> _submitChallenge(Map<String, dynamic> challenge) async {
     final id = challenge['question'] as String? ?? '';
-    final code = _codeControllers[id]?.text ?? '';
-    if (code.trim().isEmpty) return;
+    _codeControllers.putIfAbsent(id, () => TextEditingController());
+    final code = _codeControllers[id]!.text.trim();
+    if (code.isEmpty) return;
 
     setState(() => _checking[id] = true);
 
@@ -181,7 +177,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Harry's Solution", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
+                        Text('Solution', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.success)),
                         const SizedBox(height: 6),
                         Expanded(
                           child: Container(
@@ -317,7 +313,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
           Text(question, style: TextStyle(fontSize: 13, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight, height: 1.5)),
           const SizedBox(height: 10),
 
-          // Code editor
+          // Paste area
           Container(
             decoration: BoxDecoration(color: const Color(0xFF1E1E2E), borderRadius: BorderRadius.circular(10)),
             child: TextField(
@@ -327,21 +323,11 @@ class _ChallengeTabState extends State<ChallengeTab> {
               decoration: const InputDecoration(
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.all(12),
-                hintText: '# Write your code here...',
+                hintText: '# Paste your code here...',
                 hintStyle: TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontFamily: 'monospace'),
               ),
             ),
           ),
-
-          // Output display
-          if (_outputs[id] != null && _outputs[id]!.isNotEmpty)
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: const Color(0xFF2D2D3F), borderRadius: BorderRadius.circular(8)),
-              child: Text(_outputs[id]!, style: const TextStyle(fontSize: 11, color: Color(0xFFA6E3A1), fontFamily: 'monospace', height: 1.4)),
-            ),
 
           const SizedBox(height: 10),
           // Action buttons row
@@ -362,10 +348,10 @@ class _ChallengeTabState extends State<ChallengeTab> {
                   },
                 ),
               _ActionChip(
-                icon: Icons.play_arrow_rounded,
-                label: _isRunning[id] == true ? 'Running...' : 'Run',
-                color: AppColors.success,
-                onTap: _isRunning[id] == true ? null : () => _runCode(id),
+                icon: Icons.content_paste_rounded,
+                label: 'Paste',
+                color: AppColors.accent,
+                onTap: () => _pasteCode(id),
               ),
               _ActionChip(
                 icon: Icons.send_rounded,
@@ -403,7 +389,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(_aiFeedback[id]!, style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, height: 1.4)),
+                  MarkdownText(_aiFeedback[id]!),
                 ],
               ),
             ),

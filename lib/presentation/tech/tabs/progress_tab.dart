@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/progress_service.dart';
 
 class ProgressTab extends StatefulWidget {
   final Map<String, dynamic> content;
@@ -23,6 +24,7 @@ class _ProgressTabState extends State<ProgressTab> {
   int _easyDone = 0;
   int _mediumDone = 0;
   int _hardDone = 0;
+  List<String> _completedTopics = [];
 
   @override
   void initState() {
@@ -31,34 +33,17 @@ class _ProgressTabState extends State<ProgressTab> {
   }
 
   Future<void> _loadStats() async {
-    final prefs = await SharedPreferences.getInstance();
-    final today = DateTime.now();
-    final lastStudy = prefs.getString('last_study_date');
-    final savedStreak = prefs.getInt('streak') ?? 0;
-    if (lastStudy != null) {
-      final last = DateTime.parse(lastStudy);
-      final diff = today.difference(last).inDays;
-      if (diff == 1) {
-        await prefs.setInt('streak', savedStreak + 1);
-        await prefs.setString('last_study_date', today.toIso8601String());
-        setState(() => _streak = savedStreak + 1);
-      } else if (diff == 0) {
-        setState(() => _streak = savedStreak);
-      } else {
-        await prefs.setInt('streak', 1);
-        await prefs.setString('last_study_date', today.toIso8601String());
-        setState(() => _streak = 1);
-      }
-    } else {
-      await prefs.setInt('streak', 1);
-      await prefs.setString('last_study_date', today.toIso8601String());
-      setState(() => _streak = 1);
-    }
-    setState(() {
-      _easyDone = prefs.getInt('challenge_easy') ?? 0;
-      _mediumDone = prefs.getInt('challenge_medium') ?? 0;
-      _hardDone = prefs.getInt('challenge_hard') ?? 0;
-    });
+    try {
+      final progress = await context.read<ProgressService>().getProgress('python');
+      final stats = progress['challengeStats'] as Map<String, dynamic>? ?? {};
+      setState(() {
+        _streak = progress['streak'] as int? ?? 0;
+        _easyDone = (stats['easy'] as int? ?? 0);
+        _mediumDone = (stats['medium'] as int? ?? 0);
+        _hardDone = (stats['hard'] as int? ?? 0);
+        _completedTopics = List<String>.from(progress['completedTopics'] ?? []);
+      });
+    } catch (_) {}
   }
 
   List<String> _getChapterNames() {
@@ -84,13 +69,9 @@ class _ProgressTabState extends State<ProgressTab> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalTopics = widget.roadmap.length;
-    final currentTopicIndex = widget.roadmap.indexWhere((r) => r['topicId'] == widget.topicId);
-    final progress = totalTopics > 0 ? ((currentTopicIndex + 1) / totalTopics * 100) : 0.0;
+    final completedCount = _completedTopics.length;
+    final progress = totalTopics > 0 ? (completedCount / totalTopics * 100) : 0.0;
     final chapterNames = _getChapterNames();
-    final totalChapters = chapterNames.length;
-    final currentChapter = currentTopicIndex >= 0
-        ? ((currentTopicIndex / (totalTopics / totalChapters)).floor()).clamp(0, totalChapters - 1)
-        : 0;
 
     final challenges = (widget.content['challenges'] as List?)?.length ?? 0;
     final codeExamples = (widget.content['codeExamples'] as List?)?.length ?? 0;
@@ -123,7 +104,7 @@ class _ProgressTabState extends State<ProgressTab> {
               const SizedBox(height: 4),
               Text('${progress.toStringAsFixed(0)}%', style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: Colors.white)),
               const SizedBox(height: 4),
-              Text('${currentTopicIndex + 1} of $totalTopics topics', style: TextStyle(fontSize: 12, color: Colors.white60)),
+              Text('$completedCount of $totalTopics topics', style: TextStyle(fontSize: 12, color: Colors.white60)),
               const SizedBox(height: 16),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -160,9 +141,17 @@ class _ProgressTabState extends State<ProgressTab> {
               ),
               const SizedBox(height: 16),
               ...List.generate(chapterNames.length, (i) {
-                final isCompleted = i < currentChapter;
-                final isCurrent = i == currentChapter;
-                final chapterProgress = isCompleted ? 1.0 : (isCurrent ? ((currentTopicIndex % (totalTopics ~/ totalChapters)) / (totalTopics / totalChapters)).clamp(0.0, 1.0) : 0.0);
+                final chapterTopics = widget.roadmap.where((r) {
+                  final cid = r['chapterId'] as String? ?? '';
+                  return cid == 'ch${i + 1}' || cid == chapterNames[i].toLowerCase().replaceAll(' ', '_');
+                }).toList();
+                final chapterCompleted = chapterTopics.where((t) {
+                  return _completedTopics.contains(t['topicId']);
+                }).length;
+                final chapterTotal = chapterTopics.length;
+                final isCompleted = chapterTotal > 0 && chapterCompleted == chapterTotal;
+                final isCurrent = chapterTotal > 0 && chapterCompleted < chapterTotal && chapterCompleted > 0;
+                final chapterProgress = chapterTotal > 0 ? chapterCompleted / chapterTotal : 0.0;
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
@@ -280,36 +269,21 @@ class _ProgressTabState extends State<ProgressTab> {
               Wrap(
                 spacing: 6, runSpacing: 6,
                 children: [
-                  ...chapterNames.take(currentChapter + 1).map((s) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle, size: 10, color: AppColors.success),
-                        const SizedBox(width: 4),
-                        Text(s, style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  )),
-                  ...chapterNames.skip(currentChapter + 1).map((s) {
-                    final prereqIndex = _getPrerequisite(currentChapter + 1, chapterNames.indexOf(s));
-                    final isLocked = prereqIndex > currentChapter;
+                  ...chapterNames.map((s) {
+                    final completedTopicsInChapter = _completedTopics.where((t) => t.startsWith('ch${chapterNames.indexOf(s) + 1}')).length;
+                    final isUnlocked = completedTopicsInChapter > 0;
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isLocked ? (isDark ? Colors.white10 : Colors.black12) : AppColors.warning.withValues(alpha: 0.1),
+                        color: isUnlocked ? AppColors.success.withValues(alpha: 0.1) : (isDark ? Colors.white10 : Colors.black12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(isLocked ? Icons.lock_outline : Icons.check_circle_outline, size: 10, color: isLocked ? (isDark ? Colors.white24 : Colors.black26) : AppColors.warning),
+                          Icon(isUnlocked ? Icons.check_circle : Icons.lock_outline, size: 10, color: isUnlocked ? AppColors.success : (isDark ? Colors.white24 : Colors.black26)),
                           const SizedBox(width: 4),
-                          Text(s, style: TextStyle(fontSize: 10, color: isLocked ? (isDark ? Colors.white24 : Colors.black26) : AppColors.warning, fontWeight: FontWeight.w500)),
+                          Text(s, style: TextStyle(fontSize: 10, color: isUnlocked ? AppColors.success : (isDark ? Colors.white24 : Colors.black26), fontWeight: FontWeight.w500)),
                         ],
                       ),
                     );
@@ -346,7 +320,7 @@ class _ProgressTabState extends State<ProgressTab> {
                 final name = topic['name'] as String? ?? '';
                 final tId = topic['topicId'] as String? ?? '';
                 final isCurrent = tId == widget.topicId;
-                final isPassed = index < currentTopicIndex;
+                final isPassed = _completedTopics.contains(tId);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -432,24 +406,6 @@ class _ProgressTabState extends State<ProgressTab> {
     );
   }
 
-  int _getPrerequisite(int currentChapterIdx, int targetIdx) {
-    const prerequisites = {
-      1: 0,   // Ch 2 needs Ch 1
-      2: 1,   // Ch 3 needs Ch 2
-      3: 2,   // Ch 4 needs Ch 3
-      4: 3,   // Ch 5 needs Ch 4
-      5: 4,   // Ch 6 needs Ch 5
-      6: 5,   // Ch 7 needs Ch 6
-      7: 6,   // Ch 8 needs Ch 7
-      8: 7,   // Ch 9 needs Ch 8
-      9: 8,   // Ch 10 needs Ch 9
-      10: 9,  // Ch 11 needs Ch 10
-      11: 10, // Ch 12 needs Ch 11
-      12: 11, // Ch 13 needs Ch 12
-      13: 12, // Projects needs all
-    };
-    return prerequisites[targetIdx] ?? targetIdx - 1;
-  }
 }
 
 class _DiffRow extends StatelessWidget {

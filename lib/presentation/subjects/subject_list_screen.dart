@@ -6,6 +6,7 @@ import '../../blocs/content/content_state.dart';
 import '../../data/models/subject_model.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/firestore_service.dart';
+import '../../core/services/progress_service.dart';
 import '../widgets/chapter_tile.dart';
 import '../study/study_screen.dart';
 import '../tech/tech_study_screen.dart';
@@ -106,6 +107,7 @@ class _TechSubjectScreen extends StatefulWidget {
 
 class _TechSubjectScreenState extends State<_TechSubjectScreen> {
   List<Map<String, dynamic>> _roadmap = [];
+  Set<String> _completedTopics = {};
   bool _isLoading = true;
 
   @override
@@ -118,9 +120,12 @@ class _TechSubjectScreenState extends State<_TechSubjectScreen> {
     final firestore = context.read<FirestoreService>();
     try {
       final roadmap = await firestore.getTechRoadmap(widget.subject.id);
+      final progress = await context.read<ProgressService>().getProgress(widget.subject.id);
+      final completed = List<String>.from(progress['completedTopics'] ?? []);
       if (mounted) {
         setState(() {
           _roadmap = roadmap;
+          _completedTopics = completed.toSet();
           _isLoading = false;
         });
       }
@@ -184,17 +189,36 @@ class _TechSubjectScreenState extends State<_TechSubjectScreen> {
                         leading: Container(
                           width: 32, height: 32,
                           decoration: BoxDecoration(
-                            color: AppColors.tech.withValues(alpha: 0.1),
+                            color: _completedTopics.contains(topicId)
+                                ? AppColors.success.withValues(alpha: 0.15)
+                                : AppColors.tech.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Center(
-                            child: Text('${index + 1}',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.tech)),
-                          ),
+                          child: _completedTopics.contains(topicId)
+                              ? const Icon(Icons.check, size: 16, color: AppColors.success)
+                              : Center(
+                                  child: Text('${index + 1}',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.tech)),
+                                ),
                         ),
-                        title: Text(name,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
-                                color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A))),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(name,
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500,
+                                      color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A))),
+                            ),
+                            if (_completedTopics.contains(topicId))
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text('Done', style: TextStyle(fontSize: 9, color: AppColors.success, fontWeight: FontWeight.w600)),
+                              ),
+                          ],
+                        ),
                         trailing: Icon(Icons.chevron_right_rounded, size: 18,
                             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                         onTap: () {

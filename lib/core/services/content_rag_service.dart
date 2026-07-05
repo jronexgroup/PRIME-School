@@ -97,9 +97,7 @@ class ContentRagService {
     await loadAllPythonContent();
     final context = getAllContentAsContext();
     final prompt = '''
-You are a Python tutor assistant. You have access to the COMPLETE Python course content below.
-Answer the user's question based on this content. Be helpful, use Hinglish (Hindi+English mix) like CodeWithHarry.
-If the question is not related to Python or the content, politely say you can only answer Python-related questions.
+Answer the user's question based ONLY on the Python course content below. Do not roleplay or add fictional quotes. Be accurate.
 
 $context
 
@@ -112,7 +110,7 @@ User Question: $question
     await loadAllPythonContent();
     final context = getChapterContent(chapterId);
     final prompt = '''
-You are a Python tutor. Answer based on this chapter content:
+Answer based ONLY on this chapter content. Be accurate and concise.
 
 $context
 

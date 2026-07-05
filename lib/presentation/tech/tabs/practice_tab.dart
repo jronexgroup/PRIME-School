@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/python_executor_service.dart';
 import '../../../core/services/ai_service.dart';
+import '../../shared/widgets/markdown_text.dart';
 
-enum PracticeMode { example, practice, aiReview }
+enum PracticeMode { example, aiReview }
 
 class PracticeTab extends StatefulWidget {
   final Map<String, dynamic> content;
@@ -17,35 +18,14 @@ class PracticeTab extends StatefulWidget {
 
 class _PracticeTabState extends State<PracticeTab> {
   PracticeMode _mode = PracticeMode.example;
-  final TextEditingController _codeController = TextEditingController();
   final TextEditingController _reviewController = TextEditingController();
-  String _output = '';
   String _aiReviewFeedback = '';
-  bool _isRunning = false;
   bool _isReviewing = false;
-  bool _showOutput = false;
 
   @override
   void dispose() {
-    _codeController.dispose();
     _reviewController.dispose();
     super.dispose();
-  }
-
-  Future<void> _runCode() async {
-    final code = _codeController.text.trim();
-    if (code.isEmpty) return;
-    setState(() {
-      _isRunning = true;
-      _output = '';
-      _showOutput = true;
-    });
-    final executor = context.read<PythonExecutorService>();
-    final result = await executor.executeCode(code);
-    setState(() {
-      _output = result;
-      _isRunning = false;
-    });
   }
 
   Future<void> _reviewCode() async {
@@ -70,9 +50,20 @@ class _PracticeTabState extends State<PracticeTab> {
     }
   }
 
-  void _loadExample(String code) {
-    _codeController.text = code;
-    setState(() => _mode = PracticeMode.practice);
+  Future<void> _pasteFromClipboard() async {
+    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    if (data?.text != null) {
+      _reviewController.text = data!.text!;
+    }
+  }
+
+  Future<void> _copyToClipboard(String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Code copied to clipboard!'), duration: Duration(seconds: 2)),
+      );
+    }
   }
 
   @override
@@ -86,20 +77,16 @@ class _PracticeTabState extends State<PracticeTab> {
         Expanded(
           child: _mode == PracticeMode.example
               ? _buildExamplesList(codeExamples, isDark)
-              : _mode == PracticeMode.practice
-                  ? _buildPracticeEditor(isDark)
-                  : _buildAiReview(isDark),
+              : _buildAiReview(isDark),
         ),
-        if (_mode == PracticeMode.practice && _showOutput && _output.isNotEmpty)
-          _buildOutputPanel(isDark),
       ],
     );
   }
 
   Widget _buildModeToggle(bool isDark) {
-    final modes = [PracticeMode.example, PracticeMode.practice, PracticeMode.aiReview];
-    final labels = ['Examples', 'Practice', 'AI Review'];
-    final icons = [Icons.menu_book_rounded, Icons.code_rounded, Icons.rate_review_outlined];
+    final modes = [PracticeMode.example, PracticeMode.aiReview];
+    final labels = ['Examples', 'AI Review'];
+    final icons = [Icons.menu_book_rounded, Icons.rate_review_outlined];
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -110,7 +97,7 @@ class _PracticeTabState extends State<PracticeTab> {
         border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
       ),
       child: Row(
-        children: List.generate(3, (index) {
+        children: List.generate(2, (index) {
           final isSelected = _mode == modes[index];
           return Expanded(
             child: GestureDetector(
@@ -137,70 +124,6 @@ class _PracticeTabState extends State<PracticeTab> {
     );
   }
 
-  Widget _buildPracticeEditor(bool isDark) {
-    return Column(
-      children: [
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E1E2E),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextField(
-              controller: _codeController,
-              maxLines: null,
-              expands: true,
-              style: const TextStyle(fontSize: 13, color: Color(0xFFCDD6F4), fontFamily: 'monospace', height: 1.6),
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(14),
-              ),
-              keyboardType: TextInputType.multiline,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _codeController.clear(),
-                  icon: const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('Clear', style: TextStyle(fontSize: 12)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                    side: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton.icon(
-                  onPressed: _isRunning ? null : _runCode,
-                  icon: _isRunning
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.play_arrow_rounded, size: 18),
-                  label: Text(_isRunning ? 'Running...' : 'Run Code', style: const TextStyle(fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.tech,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildAiReview(bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -219,7 +142,7 @@ class _PracticeTabState extends State<PracticeTab> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Paste your Python code below. AI will review it and give feedback like Harry would!',
+                    'Paste your Python code below. AI will review it and give specific improvement suggestions.',
                     style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, height: 1.4),
                   ),
                 ),
@@ -248,21 +171,39 @@ class _PracticeTabState extends State<PracticeTab> {
             ),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isReviewing ? null : _reviewCode,
-              icon: _isReviewing
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.rate_review_outlined, size: 18),
-              label: Text(_isReviewing ? 'Reviewing...' : 'Review Code', style: const TextStyle(fontSize: 13)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pasteFromClipboard,
+                  icon: const Icon(Icons.content_paste_rounded, size: 16),
+                  label: const Text('Paste', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    side: const BorderSide(color: AppColors.accent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: _isReviewing ? null : _reviewCode,
+                  icon: _isReviewing
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.rate_review_outlined, size: 18),
+                  label: Text(_isReviewing ? 'Reviewing...' : 'Review Code', style: const TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.accent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
           if (_aiReviewFeedback.isNotEmpty) ...[
             const SizedBox(height: 16),
@@ -285,51 +226,11 @@ class _PracticeTabState extends State<PracticeTab> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(_aiReviewFeedback, style: TextStyle(fontSize: 12, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight, height: 1.6)),
+                  MarkdownText(_aiReviewFeedback),
                 ],
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOutputPanel(bool isDark) {
-    return Container(
-      height: 150,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2E),
-        border: Border(top: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            color: const Color(0xFF2D2D3F),
-            child: Row(
-              children: [
-                Icon(Icons.output_rounded, size: 14, color: AppColors.success),
-                const SizedBox(width: 6),
-                Text('Output', style: TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w500)),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => setState(() => _showOutput = false),
-                  child: Icon(Icons.close, size: 14, color: Colors.white38),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(12),
-              child: SelectableText(
-                _output,
-                style: const TextStyle(fontSize: 12, color: Color(0xFFA6E3A1), fontFamily: 'monospace', height: 1.5),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -397,10 +298,10 @@ class _PracticeTabState extends State<PracticeTab> {
               Row(
                 children: [
                   _SmallButton(
-                    icon: Icons.edit_rounded,
-                    label: 'Try It',
+                    icon: Icons.copy_rounded,
+                    label: 'Copy',
                     color: AppColors.tech,
-                    onTap: () => _loadExample(code),
+                    onTap: () => _copyToClipboard(code),
                     isDark: isDark,
                   ),
                   if (explanation.isNotEmpty) ...[

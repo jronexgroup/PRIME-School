@@ -117,16 +117,25 @@ class _LearnTabState extends State<LearnTab> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.tech.withValues(alpha: 0.12),
-            const Color(0xFF1A1A2E),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: isDark
+            ? LinearGradient(
+                colors: [
+                  AppColors.tech.withValues(alpha: 0.12),
+                  const Color(0xFF1A1A2E),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [
+                  AppColors.tech.withValues(alpha: 0.06),
+                  Colors.white,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.tech.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.tech.withValues(alpha: isDark ? 0.25 : 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,8 +156,8 @@ class _LearnTabState extends State<LearnTab> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('AI Coach', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
-                  Text('CodeWithHarry style', style: TextStyle(fontSize: 10, color: Colors.white54)),
+                  Text('AI Coach', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isDark ? Colors.white : AppColors.textPrimaryLight)),
+                  Text('AI-powered explanation', style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : AppColors.textTertiaryLight)),
                 ],
               ),
             ],
@@ -157,15 +166,15 @@ class _LearnTabState extends State<LearnTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: isDark ? Colors.black.withValues(alpha: 0.3) : AppColors.backgroundLight,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.08) : AppColors.borderLight),
             ),
             child: Text(
               script,
               style: TextStyle(
                 fontSize: 14,
-                color: const Color(0xFFE2E8F0),
+                color: isDark ? const Color(0xFFE2E8F0) : const Color(0xFF334155),
                 height: 1.8,
                 letterSpacing: 0.2,
               ),
@@ -249,7 +258,7 @@ class _LearnTabState extends State<LearnTab> {
                       points[i],
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark ? AppColors.textSecondaryDark : const Color(0xFF334155),
                         height: 1.6,
                       ),
                     ),

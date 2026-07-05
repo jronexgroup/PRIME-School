@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 
@@ -25,7 +26,7 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   void didUpdateWidget(YoutubeEmbedWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl) {
-      _isLoading = true;
+      setState(() => _isLoading = true);
       _initWebView(widget.videoUrl);
     }
   }
@@ -33,7 +34,6 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   void _initWebView(String videoUrl) {
     final videoId = _extractVideoId(videoUrl);
     final startSeconds = _extractTimestamp(videoUrl);
-    final autoplay = startSeconds > 0 ? 1 : 1;
 
     final html = '''
 <!DOCTYPE html>
@@ -49,8 +49,8 @@ body { background: #000; display: flex; justify-content: center; align-items: ce
 </head>
 <body>
 <div class="container">
-<iframe src="https://www.youtube.com/embed/$videoId?autoplay=$autoplay&start=$startSeconds&rel=0&modestbranding=1&playsinline=1"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+<iframe src="https://www.youtube.com/embed/$videoId?autoplay=0&start=$startSeconds&rel=0&modestbranding=1&playsinline=1&origin=https://flutter.dev"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
   allowfullscreen>
 </iframe>
 </div>
@@ -93,6 +93,52 @@ body { background: #000; display: flex; justify-content: center; align-items: ce
     ));
   }
 
+  void _showWatchOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.play_circle_fill, color: Colors.red),
+              title: const Text('Open in YouTube App'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _launchYouTube(useApp: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.open_in_browser, color: Colors.blue),
+              title: const Text('Open in Browser'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _launchYouTube(useApp: false);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchYouTube({bool useApp = true}) async {
+    final videoId = _extractVideoId(widget.videoUrl);
+    final uri = useApp
+        ? Uri.parse('youtube://watch?v=$videoId')
+        : Uri.parse(widget.videoUrl);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (!useApp) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open link')),
+      );
+    } else {
+      // Fallback: try browser
+      await _launchYouTube(useApp: false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -127,6 +173,20 @@ body { background: #000; display: flex; justify-content: center; align-items: ce
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.play_circle_outline, size: 18),
+                tooltip: 'Watch on YouTube',
+                color: isDark ? Colors.white70 : Colors.black54,
+                onPressed: _showWatchOptions,
+              ),
+            ),
+            const SizedBox(width: 4),
             Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.cardDark : AppColors.cardLight,
@@ -176,8 +236,8 @@ function toggleFullscreen() {
 </head>
 <body>
 <div class="container">
-<iframe id="player" src="https://www.youtube.com/embed/$videoId?autoplay=1&start=$startSeconds&rel=0&modestbranding=1"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+<iframe id="player" src="https://www.youtube.com/embed/$videoId?autoplay=0&start=$startSeconds&rel=0&modestbranding=1&origin=https://flutter.dev"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
   allowfullscreen>
 </iframe>
 </div>
