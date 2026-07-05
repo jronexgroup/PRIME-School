@@ -9,6 +9,7 @@ import '../../providers/api_key_provider.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/ai_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -386,16 +387,19 @@ class SettingsScreen extends StatelessWidget {
                       : () async {
                           final authState = context.read<AuthBloc>().state;
                           if (authState is Authenticated) {
-                            try {
-                              await apiKeyProvider.saveKeys(authState.user.uid);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('API keys saved successfully'),
-                                    backgroundColor: AppColors.success,
-                                  ),
-                                );
-                              }
+                              try {
+                                await apiKeyProvider.saveKeys(authState.user.uid);
+                                context.read<AiService>().setGeminiKeys(apiKeyProvider.geminiKeys);
+                                context.read<AiService>().setGroqKeys(apiKeyProvider.groqKeys);
+                                context.read<AiService>().setCloudflareWorkerUrl(apiKeyProvider.cloudflareWorkerUrl);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('API keys saved and activated'),
+                                      backgroundColor: AppColors.success,
+                                    ),
+                                  );
+                                }
                             } catch (e) {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(

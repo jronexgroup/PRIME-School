@@ -7,7 +7,9 @@ import 'blocs/content/content_bloc.dart';
 import 'blocs/content/content_event.dart';
 import 'blocs/content/content_state.dart';
 import 'providers/theme_provider.dart';
+import 'providers/api_key_provider.dart';
 import 'core/constants/app_colors.dart';
+import 'core/services/ai_service.dart';
 import 'presentation/widgets/custom_bottom_nav.dart';
 import 'presentation/home/home_screen.dart';
 import 'presentation/subjects/subject_list_screen.dart';
@@ -63,6 +65,19 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     context.read<ContentBloc>().add(ContentSubjectsLoaded());
+    _loadApiKeys();
+  }
+
+  Future<void> _loadApiKeys() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is Authenticated) {
+      final apiKeyProvider = context.read<ApiKeyProvider>();
+      await apiKeyProvider.loadKeys(authState.user.uid);
+      final aiService = context.read<AiService>();
+      aiService.setGeminiKeys(apiKeyProvider.geminiKeys);
+      aiService.setGroqKeys(apiKeyProvider.groqKeys);
+      aiService.setCloudflareWorkerUrl(apiKeyProvider.cloudflareWorkerUrl);
+    }
   }
 
   @override

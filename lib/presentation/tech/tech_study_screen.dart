@@ -7,17 +7,22 @@ import 'tabs/practice_tab.dart';
 import 'tabs/challenge_tab.dart';
 import 'tabs/notes_tab.dart';
 import 'tabs/progress_tab.dart';
+import 'tabs/ai_chat_tab.dart';
+import 'screens/pdf_reader_screen.dart';
+import 'screens/cheatsheet_screen.dart';
 
-enum TechTab { learn, practice, challenge, notes, progress }
+enum TechTab { learn, practice, challenge, notes, progress, aiChat }
 
 class TechStudyScreen extends StatefulWidget {
   final String subjectId;
+  final String chapterId;
   final String topicId;
   final String topicName;
 
   const TechStudyScreen({
     super.key,
     required this.subjectId,
+    required this.chapterId,
     required this.topicId,
     required this.topicName,
   });
@@ -43,6 +48,7 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
     try {
       final content = await firestore.getTechTopicContent(
         widget.subjectId,
+        widget.chapterId,
         widget.topicId,
       );
       final roadmap = await firestore.getTechRoadmap(widget.subjectId);
@@ -65,7 +71,41 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.topicName)),
+      appBar: AppBar(
+        title: Text(widget.topicName, style: const TextStyle(fontSize: 16)),
+        actions: [
+          // Handbook button
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
+            tooltip: 'Python Handbook',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => const PdfReaderScreen(
+                title: 'Python Handbook',
+                assetPath: 'assets/pdfs/python_handbook.pdf',
+              ),
+            )),
+          ),
+          // Cheatsheet button
+          IconButton(
+            icon: const Icon(Icons.lightbulb_outline, size: 20),
+            tooltip: 'Cheatsheet',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => CheatsheetScreen(chapterId: widget.chapterId),
+            )),
+          ),
+          // Notes PDF button
+          IconButton(
+            icon: const Icon(Icons.menu_book_rounded, size: 20),
+            tooltip: 'Handwritten Notes',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => const PdfReaderScreen(
+                title: 'Python Notes',
+                assetPath: 'assets/pdfs/python_notes.pdf',
+              ),
+            )),
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Column(
@@ -78,14 +118,22 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
   }
 
   Widget _buildTabBar(bool isDark) {
-    final tabs = [TechTab.learn, TechTab.practice, TechTab.challenge, TechTab.notes, TechTab.progress];
-    final labels = ['Learn', 'Practice', 'Challenge', 'Notes', 'Progress'];
+    final tabs = [
+      TechTab.learn,
+      TechTab.practice,
+      TechTab.challenge,
+      TechTab.notes,
+      TechTab.progress,
+      TechTab.aiChat,
+    ];
+    final labels = ['Learn', 'Practice', 'Challenge', 'Notes', 'Progress', 'AI Chat'];
     final icons = [
       Icons.play_circle_outline_rounded,
       Icons.code_rounded,
       Icons.flag_rounded,
       Icons.sticky_note_2_rounded,
       Icons.bar_chart_rounded,
+      Icons.smart_toy_rounded,
     ];
 
     return Container(
@@ -93,10 +141,7 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         border: Border(
-          bottom: BorderSide(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            width: 0.5,
-          ),
+          bottom: BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
         ),
       ),
       child: Row(
@@ -107,32 +152,32 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
               onTap: () => setState(() => _currentTab = tabs[index]),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                padding: const EdgeInsets.symmetric(vertical: 6),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.1)
+                      ? (tabs[index] == TechTab.aiChat ? AppColors.tech.withValues(alpha: 0.1) : AppColors.primary.withValues(alpha: 0.1))
                       : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       icons[index],
-                      size: 18,
+                      size: 16,
                       color: isSelected
-                          ? AppColors.primary
+                          ? (tabs[index] == TechTab.aiChat ? AppColors.tech : AppColors.primary)
                           : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       labels[index],
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 9,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                         color: isSelected
-                            ? AppColors.primary
+                            ? (tabs[index] == TechTab.aiChat ? AppColors.tech : AppColors.primary)
                             : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                       ),
                     ),
@@ -156,9 +201,11 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
       case TechTab.challenge:
         return ChallengeTab(content: content);
       case TechTab.notes:
-        return NotesTab(content: content);
+        return NotesTab(content: content, chapterId: widget.chapterId);
       case TechTab.progress:
         return ProgressTab(content: content, roadmap: _roadmap, topicId: widget.topicId);
+      case TechTab.aiChat:
+        return AiChatTab(subjectId: widget.subjectId, chapterId: widget.chapterId, topicId: widget.topicId);
     }
   }
 }

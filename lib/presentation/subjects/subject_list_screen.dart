@@ -9,6 +9,7 @@ import '../../core/services/firestore_service.dart';
 import '../widgets/chapter_tile.dart';
 import '../study/study_screen.dart';
 import '../tech/tech_study_screen.dart';
+import '../tech/screens/project_detail_screen.dart';
 
 class SubjectListScreen extends StatelessWidget {
   final SubjectModel subject;
@@ -166,6 +167,7 @@ class _TechSubjectScreenState extends State<_TechSubjectScreen> {
                     final topic = _roadmap[index];
                     final name = topic['name'] as String? ?? '';
                     final topicId = topic['topicId'] as String? ?? '';
+                    final chapterId = topic['chapterId'] as String? ?? '';
                     return Container(
                       padding: const EdgeInsets.all(14),
                       margin: const EdgeInsets.only(bottom: 8),
@@ -196,13 +198,25 @@ class _TechSubjectScreenState extends State<_TechSubjectScreen> {
                         trailing: Icon(Icons.chevron_right_rounded, size: 18,
                             color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                         onTap: () {
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (_) => TechStudyScreen(
-                              subjectId: widget.subject.id,
-                              topicId: topicId,
-                              topicName: name,
-                            ),
-                          ));
+                          if (chapterId == 'projects') {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => ProjectDetailScreen(
+                                subjectId: widget.subject.id,
+                                chapterId: chapterId,
+                                topicId: topicId,
+                                topicName: name,
+                              ),
+                            ));
+                          } else {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (_) => TechStudyScreen(
+                                subjectId: widget.subject.id,
+                                chapterId: chapterId,
+                                topicId: topicId,
+                                topicName: name,
+                              ),
+                            ));
+                          }
                         },
                       ),
                     );
@@ -293,6 +307,7 @@ class _TopicListScreen extends StatelessWidget {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (_) => TechStudyScreen(
                           subjectId: subjectId,
+                          chapterId: chapterId,
                           topicId: topic.id,
                           topicName: topic.name,
                         ),

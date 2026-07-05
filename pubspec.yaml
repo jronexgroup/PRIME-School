@@ -59,6 +59,12 @@ dependencies:
   # URL Launcher
   url_launcher: ^6.3.1
 
+  # PDF Viewer
+  flutter_pdfview: ^1.4.4
+
+  # WebView for YouTube embed
+  webview_flutter: ^4.14.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -70,4 +76,5 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/pdfs/
     - .env

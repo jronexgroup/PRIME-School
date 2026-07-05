@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../screens/cheatsheet_screen.dart';
 
 class NotesTab extends StatelessWidget {
   final Map<String, dynamic> content;
+  final String? chapterId;
 
-  const NotesTab({super.key, required this.content});
+  const NotesTab({super.key, required this.content, this.chapterId});
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +18,49 @@ class NotesTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Cheatsheet quick access
+        GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => CheatsheetScreen(chapterId: chapterId),
+          )),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [AppColors.tech.withValues(alpha: 0.8), AppColors.primary.withValues(alpha: 0.4)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.lightbulb_rounded, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Python Cheatsheet', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                      const SizedBox(height: 2),
+                      Text(chapterId != null ? 'Showing chapter-specific syntax' : 'Quick reference — syntax, functions, examples', style: TextStyle(fontSize: 11, color: Colors.white70)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: Colors.white54),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         if (keyConcepts.isNotEmpty) ...[
           _buildSection(
             title: 'Key Concepts',

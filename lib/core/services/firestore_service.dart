@@ -180,7 +180,7 @@ class FirestoreService {
   // Tech Side Operations
   Future<List<Map<String, dynamic>>> getTechRoadmap(String subjectId) async {
     final snapshot = await _firestore
-        .collection(FirebaseConstants.techCollection)
+        .collection(FirebaseConstants.contentCollection)
         .doc(subjectId)
         .collection('roadmap')
         .orderBy('order')
@@ -190,10 +190,12 @@ class FirestoreService {
   }
 
   Future<Map<String, dynamic>> getTechTopicContent(
-      String subjectId, String topicId) async {
+      String subjectId, String chapterId, String topicId) async {
     final doc = await _firestore
-        .collection(FirebaseConstants.techCollection)
+        .collection(FirebaseConstants.contentCollection)
         .doc(subjectId)
+        .collection('chapters')
+        .doc(chapterId)
         .collection('topics')
         .doc(topicId)
         .get();
