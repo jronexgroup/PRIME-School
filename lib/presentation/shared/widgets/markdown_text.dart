@@ -14,8 +14,9 @@ class MarkdownText extends StatelessWidget {
     if (data.isEmpty) {
       return const SizedBox.shrink();
     }
-    return SizedBox(
+    return Container(
       width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 20),
       child: Markdown(
         data: data,
         selectable: selectable,

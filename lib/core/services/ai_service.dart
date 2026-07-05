@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../constants/api_constants.dart';
 
 class AiService {
@@ -56,7 +57,16 @@ class AiService {
           sendTimeout: const Duration(seconds: 30),
         ),
       );
-      return response.data['result']['response'] as String? ?? '';
+      final result = response.data;
+      debugPrint('Cloudflare AI raw response: $result');
+      String text = '';
+      if (result is Map && result['result'] is Map) {
+        text = (result['result'] as Map)['response'] as String? ?? '';
+      }
+      if (text.trim().isEmpty) {
+        return 'I reviewed your code but could not generate specific feedback right now. Check the solution example for guidance.';
+      }
+      return text;
     } on DioException catch (e) {
       throw Exception('Cloudflare AI error: ${e.response?.statusCode ?? e.message}');
     }

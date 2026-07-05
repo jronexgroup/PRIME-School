@@ -116,10 +116,15 @@ class _ChallengeTabState extends State<ChallengeTab> {
       final difficulty = challenge['difficulty'] as String? ?? 'easy';
 
       final isCorrect = feedback.contains('✓ CORRECT') ||
+          feedback.contains('✅') ||
           feedback.contains('CORRECT') ||
           feedback.contains('Correct') ||
+          feedback.contains('correct') ||
+          feedback.contains('PASSED') ||
           feedback.contains('Passed') ||
-          feedback.contains('Well done');
+          feedback.contains('passed') ||
+          feedback.contains('Well done') ||
+          feedback.contains('well done');
 
       if (isCorrect) {
         _incrementLocalStat(difficulty);
