@@ -20,6 +20,7 @@ class MarkdownText extends StatelessWidget {
       child: Markdown(
         data: data,
         selectable: selectable,
+        shrinkWrap: true,
         styleSheet: MarkdownStyleSheet(
           p: TextStyle(
             fontSize: 13,
