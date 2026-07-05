@@ -15,6 +15,8 @@ class YoutubeEmbedWidget extends StatefulWidget {
 class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   YoutubePlayerController? _controller;
   String? _videoId;
+  int _startSeconds = 0;
+  int _currentPosition = 0;
 
   @override
   void initState() {
@@ -26,41 +28,48 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
   void didUpdateWidget(YoutubeEmbedWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.videoUrl != widget.videoUrl) {
-      _controller?.dispose();
+      _controller?.close();
       _initPlayer(widget.videoUrl);
     }
   }
 
   void _initPlayer(String videoUrl) {
     _videoId = _extractVideoId(videoUrl);
-    final startSeconds = _extractTimestamp(videoUrl);
+    _startSeconds = _extractTimestamp(videoUrl);
     if (_videoId == null) return;
 
-    _controller = YoutubePlayerController(
-      initialVideoId: _videoId!,
-      flags: YoutubePlayerFlags(
-        autoPlay: true,
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: _videoId!,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
         mute: false,
-        startAt: startSeconds,
-        controlsVisibleAtStart: true,
+        strictRelatedVideos: true,
       ),
     );
+
+    _controller!.videoStateStream.listen((state) {
+      _currentPosition = state.position.inSeconds;
+    });
+
+    if (_startSeconds > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _controller!.seekTo(seconds: _startSeconds.toDouble(), allowSeekAhead: true);
+      });
+    }
   }
 
   String? _extractVideoId(String url) {
-    final id = YoutubePlayer.convertUrlToId(url);
-    if (id == null) {
-      final patterns = [
-        RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
-      ];
-      for (final p in patterns) {
-        final match = p.firstMatch(url);
-        if (match != null) return match.group(1)!;
-      }
-      debugPrint('YouTube: Could not extract video ID from $url');
-      return 'UrsmFxEIp5k';
+    final patterns = [
+      RegExp(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})'),
+    ];
+    for (final p in patterns) {
+      final match = p.firstMatch(url);
+      if (match != null) return match.group(1)!;
     }
-    return id;
+    debugPrint('YouTube: Could not extract video ID from $url');
+    return null;
   }
 
   int _extractTimestamp(String url) {
@@ -68,14 +77,6 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
     final ts = match != null ? int.parse(match.group(1)!) : 0;
     debugPrint('YouTube: Extracted timestamp $ts from $url');
     return ts;
-  }
-
-  int _currentPosition() {
-    return _controller?.value.position.inSeconds ?? 0;
-  }
-
-  void _openFullscreen() {
-    _controller?.toggleFullScreenMode();
   }
 
   void _showWatchOptions() {
@@ -109,16 +110,16 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
 
   Future<void> _launchYouTube({bool useApp = true}) async {
     if (_videoId == null) return;
-    final startSeconds = _currentPosition();
+    final pos = _currentPosition > 0 ? _currentPosition : _startSeconds;
 
     if (useApp) {
-      final appUri = Uri.parse('youtube://watch?v=$_videoId${startSeconds > 0 ? '&t=${startSeconds}s' : ''}');
+      final appUri = Uri.parse('youtube://watch?v=$_videoId${pos > 0 ? '&t=${pos}s' : ''}');
       if (await canLaunchUrl(appUri)) {
         await launchUrl(appUri, mode: LaunchMode.externalApplication);
         return;
       }
     }
-    final webUri = Uri.parse('https://youtu.be/$_videoId${startSeconds > 0 ? '?t=$startSeconds' : ''}');
+    final webUri = Uri.parse('https://youtu.be/$_videoId${pos > 0 ? '?t=$pos' : ''}');
     if (await canLaunchUrl(webUri)) {
       await launchUrl(webUri, mode: LaunchMode.externalApplication);
     } else {
@@ -130,7 +131,7 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    _controller?.close();
     super.dispose();
   }
 
@@ -158,12 +159,9 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
             border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
           ),
           clipBehavior: Clip.antiAlias,
-          child: YoutubePlayerBuilder(
-            player: YoutubePlayer(controller: _controller!),
-            builder: (context, player) => AspectRatio(
-              aspectRatio: 16 / 9,
-              child: player,
-            ),
+          child: YoutubePlayer(
+            controller: _controller!,
+            aspectRatio: 16 / 9,
           ),
         ),
         const SizedBox(height: 6),
@@ -181,20 +179,6 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
                 tooltip: 'Watch on YouTube',
                 color: isDark ? Colors.white70 : Colors.black54,
                 onPressed: _showWatchOptions,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Container(
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight, width: 0.5),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.fullscreen_rounded, size: 18),
-                tooltip: 'Full Screen',
-                color: isDark ? Colors.white70 : Colors.black54,
-                onPressed: _openFullscreen,
               ),
             ),
           ],
