@@ -25,6 +25,8 @@ class _ProgressTabState extends State<ProgressTab> {
   int _mediumDone = 0;
   int _hardDone = 0;
   List<String> _completedTopics = [];
+  List<String> _completedChapters = [];
+  int _totalChallengesSolved = 0;
 
   @override
   void initState() {
@@ -41,7 +43,9 @@ class _ProgressTabState extends State<ProgressTab> {
         _easyDone = (stats['easy'] as int? ?? 0);
         _mediumDone = (stats['medium'] as int? ?? 0);
         _hardDone = (stats['hard'] as int? ?? 0);
+        _totalChallengesSolved = _easyDone + _mediumDone + _hardDone;
         _completedTopics = List<String>.from(progress['completedTopics'] ?? []);
+        _completedChapters = List<String>.from(progress['completedChapters'] ?? []);
       });
     } catch (_) {}
   }
@@ -141,15 +145,16 @@ class _ProgressTabState extends State<ProgressTab> {
               ),
               const SizedBox(height: 16),
               ...List.generate(chapterNames.length, (i) {
+                final cid = 'ch${i + 1}';
                 final chapterTopics = widget.roadmap.where((r) {
-                  final cid = r['chapterId'] as String? ?? '';
-                  return cid == 'ch${i + 1}' || cid == chapterNames[i].toLowerCase().replaceAll(' ', '_');
+                  final rcId = r['chapterId'] as String? ?? '';
+                  return rcId == cid || rcId == chapterNames[i].toLowerCase().replaceAll(' ', '_');
                 }).toList();
                 final chapterCompleted = chapterTopics.where((t) {
                   return _completedTopics.contains(t['topicId']);
                 }).length;
                 final chapterTotal = chapterTopics.length;
-                final isCompleted = chapterTotal > 0 && chapterCompleted == chapterTotal;
+                final isCompleted = _completedChapters.contains(cid) || (chapterTotal > 0 && chapterCompleted == chapterTotal);
                 final isCurrent = chapterTotal > 0 && chapterCompleted < chapterTotal && chapterCompleted > 0;
                 final chapterProgress = chapterTotal > 0 ? chapterCompleted / chapterTotal : 0.0;
 
@@ -270,8 +275,8 @@ class _ProgressTabState extends State<ProgressTab> {
                 spacing: 6, runSpacing: 6,
                 children: [
                   ...chapterNames.map((s) {
-                    final completedTopicsInChapter = _completedTopics.where((t) => t.startsWith('ch${chapterNames.indexOf(s) + 1}')).length;
-                    final isUnlocked = completedTopicsInChapter > 0;
+                    final cid = 'ch${chapterNames.indexOf(s) + 1}';
+                    final isUnlocked = _completedChapters.contains(cid) || _completedTopics.where((t) => t.startsWith(cid)).isNotEmpty;
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
@@ -388,7 +393,7 @@ class _ProgressTabState extends State<ProgressTab> {
     );
   }
 
-  Widget _buildChallengesBadge(int challenges, bool isDark) {
+  Widget _buildChallengesBadge(int _, bool isDark) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -400,7 +405,7 @@ class _ProgressTabState extends State<ProgressTab> {
         children: [
           const Icon(Icons.flag_rounded, size: 16, color: Colors.white),
           const SizedBox(width: 6),
-          Text('$challenges challenges', style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500)),
+          Text('$_totalChallengesSolved challenges', style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w500)),
         ],
       ),
     );

@@ -51,29 +51,6 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
     } catch (_) {}
   }
 
-  Future<void> _markComplete() async {
-    try {
-      await context.read<ProgressService>().markTopicComplete(
-        'python',
-        widget.topicId,
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Topic marked as complete!'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}')),
-        );
-      }
-    }
-  }
-
   Future<void> _loadContent() async {
     final firestore = context.read<FirestoreService>();
     try {
@@ -105,12 +82,6 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
       appBar: AppBar(
         title: Text(widget.topicName, style: const TextStyle(fontSize: 16)),
         actions: [
-          // Mark Complete
-          IconButton(
-            icon: const Icon(Icons.check_circle_outline, size: 20),
-            tooltip: 'Mark Complete',
-            onPressed: _markComplete,
-          ),
           // Handbook button
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, size: 20),
@@ -236,7 +207,7 @@ class _TechStudyScreenState extends State<TechStudyScreen> {
       case TechTab.practice:
         return PracticeTab(content: content);
       case TechTab.challenge:
-        return ChallengeTab(content: content);
+        return ChallengeTab(content: content, subjectId: widget.subjectId, chapterId: widget.chapterId, topicId: widget.topicId, roadmap: _roadmap);
       case TechTab.notes:
         return NotesTab(content: content, chapterId: widget.chapterId);
       case TechTab.progress:

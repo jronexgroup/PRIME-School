@@ -139,10 +139,9 @@ Topic Content: $topicContent
 
   Future<String> checkAnswer(String question, String userAnswer, String correctAnswer) async {
     final prompt = '''
-Check this Python answer and provide feedback in this format:
-✓ CORRECT or ✗ INCORRECT
-Issues:
-Fix:
+Check this Python answer and provide feedback.
+Your response MUST start with exactly "✓ CORRECT" if the answer is correct, or "✗ INCORRECT" if wrong.
+Then provide specific feedback.
 
 Question: $question
 User's Answer: $userAnswer

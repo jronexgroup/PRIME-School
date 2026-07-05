@@ -8,8 +8,19 @@ import '../../shared/widgets/markdown_text.dart';
 
 class ChallengeTab extends StatefulWidget {
   final Map<String, dynamic> content;
+  final String subjectId;
+  final String chapterId;
+  final String topicId;
+  final List<Map<String, dynamic>> roadmap;
 
-  const ChallengeTab({super.key, required this.content});
+  const ChallengeTab({
+    super.key,
+    required this.content,
+    required this.subjectId,
+    required this.chapterId,
+    required this.topicId,
+    required this.roadmap,
+  });
 
   @override
   State<ChallengeTab> createState() => _ChallengeTabState();
@@ -44,17 +55,14 @@ class _ChallengeTabState extends State<ChallengeTab> {
     } catch (_) {}
   }
 
-  Future<void> _saveStat(String difficulty) async {
-    try {
-      await context.read<ProgressService>().updateChallengeStat('python', difficulty);
-      if (difficulty == 'easy') {
-        _easyDone++;
-      } else if (difficulty == 'medium') {
-        _mediumDone++;
-      } else {
-        _hardDone++;
-      }
-    } catch (_) {}
+  void _incrementLocalStat(String difficulty) {
+    if (difficulty == 'easy') {
+      _easyDone++;
+    } else if (difficulty == 'medium') {
+      _mediumDone++;
+    } else {
+      _hardDone++;
+    }
   }
 
   @override
@@ -106,7 +114,32 @@ class _ChallengeTabState extends State<ChallengeTab> {
         correctAnswer,
       );
       final difficulty = challenge['difficulty'] as String? ?? 'easy';
-      await _saveStat(difficulty);
+
+      final isCorrect = feedback.contains('✓ CORRECT') ||
+          feedback.contains('CORRECT') ||
+          feedback.contains('Correct') ||
+          feedback.contains('Passed') ||
+          feedback.contains('Well done');
+
+      if (isCorrect) {
+        _incrementLocalStat(difficulty);
+        final progress = context.read<ProgressService>();
+        final challengeKey = '${widget.chapterId}/${widget.topicId}/$id';
+        await progress.markChallengeComplete(widget.subjectId, challengeKey, difficulty);
+
+        final challenges = (widget.content['challenges'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        final topicChallengeIds = challenges
+            .map((c) => '${widget.chapterId}/${widget.topicId}/${c['question']}')
+            .toList();
+        await progress.autoCompleteTopic(widget.subjectId, widget.topicId, topicChallengeIds);
+
+        final chapterTopics = widget.roadmap
+            .where((t) => t['chapterId'] == widget.chapterId)
+            .map((t) => t['topicId'] as String)
+            .toList();
+        await progress.autoCompleteChapter(widget.subjectId, widget.chapterId, chapterTopics);
+      }
+
       setState(() {
         _aiFeedback[id] = feedback;
         _submitted[id] = true;
