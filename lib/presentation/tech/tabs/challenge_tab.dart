@@ -137,6 +137,9 @@ class _ChallengeTabState extends State<ChallengeTab> {
     final code = _codeControllers[id]!.text.trim();
     if (code.isEmpty) return;
 
+    // Prevent re-submitting already solved challenges
+    if (_solved[id] == true) return;
+
     setState(() => _checking[id] = true);
 
     try {
@@ -177,6 +180,9 @@ class _ChallengeTabState extends State<ChallengeTab> {
             .map((t) => t['topicId'] as String)
             .toList();
         await progress.autoCompleteChapter(widget.subjectId, widget.chapterId, chapterTopics);
+      } else {
+        // Explicitly do NOT update progress or mark challenge as complete
+        // Only save the submission with solved=false
       }
 
       await _saveSubmission(
@@ -366,7 +372,9 @@ class _ChallengeTabState extends State<ChallengeTab> {
     final isSolved = _solved[id] == true;
     final isSubmitted = _submitted[id] == true;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -378,7 +386,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
               : (isSubmitted
                   ? AppColors.warning.withValues(alpha: 0.3)
                   : (isDark ? AppColors.borderDark : AppColors.borderLight)),
-          width: 0.5,
+          width: isSolved ? 1 : 0.5,
         ),
       ),
       child: Column(
@@ -408,18 +416,34 @@ class _ChallengeTabState extends State<ChallengeTab> {
           Text(question, style: TextStyle(fontSize: 13, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight, height: 1.5)),
           const SizedBox(height: 10),
 
-          // Paste area
+          // Code editor
           Container(
-            decoration: BoxDecoration(color: const Color(0xFF1E1E2E), borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E1E2E),
+              borderRadius: BorderRadius.circular(10),
+              border: isSolved
+                  ? Border.all(color: AppColors.success.withValues(alpha: 0.3), width: 1)
+                  : null,
+            ),
             child: TextField(
               controller: _codeControllers[id],
               maxLines: 4,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFCDD6F4), fontFamily: 'monospace', height: 1.5),
-              decoration: const InputDecoration(
+              readOnly: isSolved,
+              style: TextStyle(
+                fontSize: 12,
+                color: isSolved ? const Color(0xFFA6E3A1) : const Color(0xFFCDD6F4),
+                fontFamily: 'monospace',
+                height: 1.5,
+              ),
+              decoration: InputDecoration(
                 border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12),
-                hintText: '# Paste your code here...',
-                hintStyle: TextStyle(fontSize: 12, color: Color(0xFF6B7280), fontFamily: 'monospace'),
+                contentPadding: const EdgeInsets.all(12),
+                hintText: isSolved ? '✓ Challenge completed' : '# Paste your code here...',
+                hintStyle: TextStyle(
+                  fontSize: 12,
+                  color: isSolved ? AppColors.success.withValues(alpha: 0.5) : const Color(0xFF6B7280),
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
           ),
@@ -452,9 +476,16 @@ class _ChallengeTabState extends State<ChallengeTab> {
               if (!isSolved)
                 _ActionChip(
                   icon: Icons.send_rounded,
-                  label: _checking[id] == true ? 'Checking...' : 'Retry',
+                  label: _checking[id] == true ? 'Checking...' : (isSubmitted ? 'Retry' : 'Submit'),
                   color: AppColors.primary,
                   onTap: _checking[id] == true ? null : () => _submitChallenge(challenge),
+                ),
+              if (isSolved)
+                _ActionChip(
+                  icon: Icons.check_circle_rounded,
+                  label: 'Completed',
+                  color: AppColors.success,
+                  onTap: null,
                 ),
               if (solution.isNotEmpty && isSubmitted)
                 _ActionChip(
@@ -467,48 +498,87 @@ class _ChallengeTabState extends State<ChallengeTab> {
           ),
 
           if (_aiFeedback[id] != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              constraints: const BoxConstraints(maxHeight: 320),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
+                color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.15),
+                  width: 0.5,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.feedback_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
-                      const SizedBox(width: 6),
-                      Text('AI Feedback', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSolved ? AppColors.success : AppColors.warning)),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(Icons.smart_toy_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI Feedback',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSolved ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
                       const Spacer(),
                       if (isSolved)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
+                            color: AppColors.success.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text('Solved', style: TextStyle(fontSize: 9, color: AppColors.success, fontWeight: FontWeight.w600)),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.success),
+                              const SizedBox(width: 4),
+                              const Text('Solved', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
                         )
                       else
                         GestureDetector(
                           onTap: () => _submitChallenge(challenge),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.warning.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text('Retry', style: TextStyle(fontSize: 9, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.refresh_rounded, size: 10, color: AppColors.warning),
+                                const SizedBox(width: 4),
+                                const Text('Retry', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
                           ),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  MarkdownText(_aiFeedback[id]!),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: MarkdownText(_aiFeedback[id]!),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -627,17 +697,28 @@ class _ActionChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
+          color: color.withValues(alpha: onTap != null ? 0.12 : 0.06),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: color.withValues(alpha: onTap != null ? 0.2 : 0.08),
+            width: 0.5,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 12, color: color),
-            const SizedBox(width: 4),
-            Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: color)),
+            Icon(icon, size: 13, color: onTap != null ? color : color.withValues(alpha: 0.5)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: onTap != null ? color : color.withValues(alpha: 0.5),
+              ),
+            ),
           ],
         ),
       ),
