@@ -551,77 +551,70 @@ class _ChallengeTabState extends State<ChallengeTab> {
                   width: 0.5,
                 ),
               ),
-              child: SizedBox(
-                height: 360,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(Icons.smart_toy_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'AI Feedback',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSolved ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (isSolved)
                         Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
+                            color: AppColors.success.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Icon(Icons.smart_toy_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'AI Feedback',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isSolved ? AppColors.success : AppColors.warning,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.success),
+                              const SizedBox(width: 4),
+                              const Text('Solved', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
+                            ],
                           ),
-                        ),
-                        const Spacer(),
-                        if (isSolved)
-                          Container(
+                        )
+                      else
+                        GestureDetector(
+                          onTap: () => _submitChallenge(challenge),
+                          child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.12),
+                              color: AppColors.warning.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.success),
+                                const Icon(Icons.refresh_rounded, size: 10, color: AppColors.warning),
                                 const SizedBox(width: 4),
-                                const Text('Solved', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
+                                const Text('Retry', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
                               ],
                             ),
-                          )
-                        else
-                          GestureDetector(
-                            onTap: () => _submitChallenge(challenge),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.warning.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.refresh_rounded, size: 10, color: AppColors.warning),
-                                  const SizedBox(width: 4),
-                                  const Text('Retry', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
-                                ],
-                              ),
-                            ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const ClampingScrollPhysics(),
-                        child: MarkdownText(_aiFeedback[id]!),
-                      ),
-                    ),
-                  ],
-                ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  MarkdownText(_aiFeedback[id]!),
+                ],
               ),
             ),
           ],

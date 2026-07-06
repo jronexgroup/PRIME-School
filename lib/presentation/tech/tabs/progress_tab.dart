@@ -146,7 +146,7 @@ class _ProgressTabState extends State<ProgressTab> {
               ),
               const SizedBox(height: 16),
               ...List.generate(chapterNames.length, (i) {
-                final cid = 'ch${i + 1}';
+                final cid = 'chapter_${i + 1}';
                 final chapterTopics = widget.roadmap.where((r) {
                   final rcId = r['chapterId'] as String? ?? '';
                   return rcId == cid || rcId == chapterNames[i].toLowerCase().replaceAll(' ', '_');
@@ -276,7 +276,7 @@ class _ProgressTabState extends State<ProgressTab> {
                 spacing: 6, runSpacing: 6,
                 children: [
                   ...chapterNames.map((s) {
-                    final cid = 'ch${chapterNames.indexOf(s) + 1}';
+                    final cid = 'chapter_${chapterNames.indexOf(s) + 1}';
                     final isUnlocked = _completedChapters.contains(cid) || _completedTopics.where((t) => t.startsWith(cid)).isNotEmpty;
                     return Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
