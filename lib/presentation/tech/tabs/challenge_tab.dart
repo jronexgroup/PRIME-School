@@ -33,6 +33,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
   final Map<String, bool> _checking = {};
   final Map<String, bool> _solved = {};
   final Map<String, int> _hintLevel = {};
+  final Map<String, int> _attempts = {};
   int _easyDone = 0;
   int _mediumDone = 0;
   int _hardDone = 0;
@@ -40,16 +41,16 @@ class _ChallengeTabState extends State<ChallengeTab> {
   @override
   void initState() {
     super.initState();
-    _loadStats();
-    _loadSubmissions();
+    _loadAll();
   }
 
-  Future<void> _loadSubmissions() async {
+  Future<void> _loadAll() async {
     try {
       final progress = context.read<ProgressService>();
-      final submissions = await progress.getChallengeSubmissions(widget.subjectId);
       final progressData = await progress.getProgress(widget.subjectId);
+      final submissions = Map<String, dynamic>.from(progressData['challengeSubmissions'] ?? {});
       final completedChallenges = List<String>.from(progressData['completedChallenges'] ?? []);
+      final stats = progressData['challengeStats'] as Map<String, dynamic>? ?? {};
       final challenges = (widget.content['challenges'] as List?)?.cast<Map<String, dynamic>>() ?? [];
 
       for (final c in challenges) {
@@ -63,7 +64,6 @@ class _ChallengeTabState extends State<ChallengeTab> {
           final submissionSolved = submission['solved'] as bool? ?? false;
           final solved = submissionSolved || completedChallenges.contains(key);
 
-          // Always restore code text (putIfAbsent won't overwrite if build ran first)
           final controller = _codeControllers.putIfAbsent(id, () => TextEditingController());
           if (code.isNotEmpty) controller.text = code;
 
@@ -71,23 +71,18 @@ class _ChallengeTabState extends State<ChallengeTab> {
             _aiFeedback[id] = feedback;
             _submitted[id] = true;
             _solved[id] = solved;
+            _attempts[id] = submission['attempts'] as int? ?? 0;
           }
         }
       }
-      if (mounted) setState(() {});
-    } catch (_) {}
-  }
 
-  Future<void> _loadStats() async {
-    try {
-      final progress = context.read<ProgressService>().getProgress('python');
-      final data = await progress;
-      final stats = data['challengeStats'] as Map<String, dynamic>? ?? {};
-      setState(() {
-        _easyDone = (stats['easy'] as int? ?? 0);
-        _mediumDone = (stats['medium'] as int? ?? 0);
-        _hardDone = (stats['hard'] as int? ?? 0);
-      });
+      if (mounted) {
+        setState(() {
+          _easyDone = (stats['easy'] as int? ?? 0);
+          _mediumDone = (stats['medium'] as int? ?? 0);
+          _hardDone = (stats['hard'] as int? ?? 0);
+        });
+      }
     } catch (_) {}
   }
 
@@ -133,13 +128,10 @@ class _ChallengeTabState extends State<ChallengeTab> {
     }
   }
 
-  Future<void> _saveSubmission(String id, String code, String feedback, bool solved, String difficulty) async {
+  Future<void> _saveSubmission(String id, String code, String feedback, bool solved, String difficulty, {int attempts = 1}) async {
     try {
       final progress = context.read<ProgressService>();
       final challengeKey = '${widget.chapterId}/${widget.topicId}/$id';
-      final submissions = await progress.getChallengeSubmissions(widget.subjectId);
-      final existing = submissions[challengeKey] as Map<String, dynamic>?;
-      final attempts = (existing?['attempts'] as int? ?? 0) + 1;
       await progress.saveChallengeSubmission(
         widget.subjectId,
         challengeKey,
@@ -167,6 +159,9 @@ class _ChallengeTabState extends State<ChallengeTab> {
     try {
       final ai = context.read<AiService>();
       final correctAnswer = challenge['solution'] as String? ?? '';
+      if (correctAnswer.isEmpty) {
+        throw Exception('No solution available for this challenge');
+      }
       final feedback = await ai.checkAnswer(
         challenge['question'] as String? ?? '',
         code,
@@ -174,16 +169,10 @@ class _ChallengeTabState extends State<ChallengeTab> {
       );
       final difficulty = challenge['difficulty'] as String? ?? 'easy';
 
-      final isCorrect = feedback.contains('✓ CORRECT') ||
-          feedback.contains('✅') ||
-          feedback.contains('CORRECT') ||
-          feedback.contains('Correct') ||
-          feedback.contains('correct') ||
-          feedback.contains('PASSED') ||
-          feedback.contains('Passed') ||
-          feedback.contains('passed') ||
-          feedback.contains('Well done') ||
-          feedback.contains('well done');
+      // Strict check: AI is instructed to start with exactly "✓ CORRECT" or "✗ INCORRECT"
+      // Using startsWith to avoid matching "correct" inside "incorrect" or explanations
+      final trimmed = feedback.trim();
+      final isCorrect = trimmed.startsWith('✓ CORRECT') || trimmed.startsWith('✅');
 
       if (isCorrect) {
         _incrementLocalStat(difficulty);
@@ -207,12 +196,14 @@ class _ChallengeTabState extends State<ChallengeTab> {
         // Only save the submission with solved=false
       }
 
+      final currentAttempts = (_attempts[id] ?? 0) + 1;
       await _saveSubmission(
         id,
         code,
         feedback,
         isCorrect,
         difficulty,
+        attempts: currentAttempts,
       );
 
       if (mounted) {
@@ -220,13 +211,14 @@ class _ChallengeTabState extends State<ChallengeTab> {
           _aiFeedback[id] = feedback;
           _submitted[id] = true;
           _solved[id] = isCorrect;
+          _attempts[id] = currentAttempts;
           _checking[id] = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _aiFeedback[id] = 'AI feedback unavailable. Check your solution manually.';
+          _aiFeedback[id] = e is Exception ? e.toString().replaceFirst('Exception: ', '') : 'AI feedback unavailable. Check your solution manually.';
           _submitted[id] = true;
           _solved[id] = false;
           _checking[id] = false;
@@ -523,7 +515,6 @@ class _ChallengeTabState extends State<ChallengeTab> {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 320),
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.06),
@@ -533,75 +524,77 @@ class _ChallengeTabState extends State<ChallengeTab> {
                   width: 0.5,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Icon(Icons.smart_toy_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'AI Feedback',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSolved ? AppColors.success : AppColors.warning,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (isSolved)
+              child: SizedBox(
+                height: 280,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.12),
+                            color: (isSolved ? AppColors.success : AppColors.warning).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.success),
-                              const SizedBox(width: 4),
-                              const Text('Solved', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
-                            ],
+                          child: Icon(Icons.smart_toy_rounded, size: 14, color: isSolved ? AppColors.success : AppColors.warning),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'AI Feedback',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isSolved ? AppColors.success : AppColors.warning,
                           ),
-                        )
-                      else
-                        GestureDetector(
-                          onTap: () => _submitChallenge(challenge),
-                          child: Container(
+                        ),
+                        const Spacer(),
+                        if (isSolved)
+                          Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: AppColors.warning.withValues(alpha: 0.12),
+                              color: AppColors.success.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.refresh_rounded, size: 10, color: AppColors.warning),
+                                const Icon(Icons.check_circle_rounded, size: 10, color: AppColors.success),
                                 const SizedBox(width: 4),
-                                const Text('Retry', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                                const Text('Solved', style: TextStyle(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
                               ],
                             ),
+                          )
+                        else
+                          GestureDetector(
+                            onTap: () => _submitChallenge(challenge),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.refresh_rounded, size: 10, color: AppColors.warning),
+                                  const SizedBox(width: 4),
+                                  const Text('Retry', style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Flexible(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: MarkdownText(_aiFeedback[id]!),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: MarkdownText(_aiFeedback[id]!),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
