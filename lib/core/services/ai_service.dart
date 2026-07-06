@@ -64,23 +64,23 @@ class AiService {
       debugPrint('Cloudflare AI raw response: $result');
       String text = '';
       if (result is Map) {
-        // Kimi K2.6 returns OpenAI-compatible format:
-        // {id, object, created, model, choices: [{message: {content: "..."}}]}
-        if (result['choices'] is List) {
-          final choices = result['choices'] as List;
+        // Cloudflare wraps the real response in {result: {...}, success: true}
+        // The inner result uses OpenAI-compatible format:
+        // {choices: [{message: {content: "..."}}]}
+        Map data = result;
+        if (result['result'] is Map) data = result['result'] as Map;
+
+        // OpenAI-compatible format: data = {choices: [{message: {content: "..."}}]}
+        if (data['choices'] is List) {
+          final choices = data['choices'] as List;
           if (choices.isNotEmpty && choices[0] is Map) {
             final msg = (choices[0] as Map)['message'];
             if (msg is Map) text = msg['content'] as String? ?? '';
           }
         }
-        // Legacy Cloudflare format: {result: {response: "..."}}
-        if (text.isEmpty && result['result'] is Map) {
-          final r = result['result'] as Map;
-          text = r['response'] as String? ?? '';
-        }
-        // Bare response/content at top level
+        // Legacy format: data = {response: "..."}
         if (text.isEmpty) {
-          text = result['response'] as String? ?? result['content'] as String? ?? '';
+          text = data['response'] as String? ?? data['content'] as String? ?? '';
         }
       }
       if (text.trim().isEmpty) {
