@@ -37,6 +37,7 @@ class _ProgressTabState extends State<ProgressTab> {
   Future<void> _loadStats() async {
     try {
       final progress = await context.read<ProgressService>().getProgress('python');
+      if (!mounted) return;
       final stats = progress['challengeStats'] as Map<String, dynamic>? ?? {};
       setState(() {
         _streak = progress['streak'] as int? ?? 0;
