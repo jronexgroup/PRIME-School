@@ -1,16 +1,26 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import '../constants/api_constants.dart';
 
 class AiService {
   final Dio _dio = Dio();
+
+  // Sarvam AI (primary provider — always available with default key)
+  static const String _sarvamApiKey = 'sk_f9xingij_yhFq7DU468sOK0f5y61TSTUJ';
+  static const String _sarvamUrl = 'https://api.sarvam.ai/v1/chat/completions';
+  String? _customSarvamKey;
+
+  // Legacy providers (mostly broken)
+  static const String _cloudflareWorkerUrl = 'https://prime-school-api.jronex.workers.dev';
   final List<String> _geminiKeys = [];
   final List<String> _groqKeys = [];
   int _currentGeminiKey = 0;
   int _currentGroqKey = 0;
-  String _cloudflareWorkerUrl = ApiConstants.cloudflareWorkerUrl;
   String _cloudflareAccountId = '';
   String _cloudflareApiToken = '';
+
+  void setSarvamApiKey(String key) {
+    _customSarvamKey = key;
+  }
 
   void setGeminiKeys(List<String> keys) {
     _geminiKeys.clear();
@@ -25,9 +35,7 @@ class AiService {
   }
 
   void setCloudflareWorkerUrl(String url) {
-    if (url.isNotEmpty) {
-      _cloudflareWorkerUrl = url;
-    }
+    // Kept for backward compatibility — no longer used
   }
 
   void setCloudflareCredentials(String accountId, String apiToken) {
@@ -36,7 +44,55 @@ class AiService {
   }
 
   bool get hasCloudflareCredentials => _cloudflareAccountId.isNotEmpty && _cloudflareApiToken.isNotEmpty;
-  bool get hasAnyKeys => hasCloudflareCredentials || _geminiKeys.isNotEmpty || _groqKeys.isNotEmpty;
+  bool get hasAnyKeys => true; // Sarvam always available via default key
+
+  Future<String> generateWithSarvam(String prompt, {String? context}) async {
+    final key = _customSarvamKey ?? _sarvamApiKey;
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': 'You are a friendly tutor for Indian students. Explain concepts like teaching a child — use simple words, relatable examples, and break things down step by step. Be patient and encouraging.'},
+      {'role': 'user', 'content': context != null ? '$context\n\n$prompt' : prompt},
+    ];
+
+    try {
+      final response = await _dio.post(
+        _sarvamUrl,
+        data: {
+          'model': 'sarvam-105b',
+          'messages': messages,
+          'temperature': 0.3,
+          'max_tokens': 4096,
+        },
+        options: Options(
+          headers: {'api-subscription-key': key},
+          receiveTimeout: const Duration(seconds: 120),
+          sendTimeout: const Duration(seconds: 30),
+        ),
+      );
+      final result = response.data;
+      debugPrint('Sarvam AI raw response: $result');
+
+      if (result is Map && result['choices'] is List) {
+        final choices = result['choices'] as List;
+        if (choices.isNotEmpty && choices[0] is Map) {
+          final msg = (choices[0] as Map)['message'];
+          if (msg is Map) {
+            final text = msg['content'] as String? ?? '';
+            if (text.trim().isNotEmpty) return text;
+          }
+        }
+      }
+      // Fallback: try response field
+      if (result is Map) {
+        final text = result['response'] as String? ?? '';
+        if (text.trim().isNotEmpty) return text;
+      }
+      debugPrint('Sarvam AI: empty response — full result: $result');
+      return 'I could not generate a response right now. Please try again.';
+    } on DioException catch (e) {
+      debugPrint('Sarvam AI error: ${e.response?.statusCode} ${e.response?.data}');
+      throw Exception('Sarvam AI error: ${e.response?.statusCode ?? e.message}');
+    }
+  }
 
   Future<String> generateWithCloudflareDirect(String prompt, {String? context}) async {
     final model = '@cf/moonshotai/kimi-k2.6';
@@ -97,15 +153,15 @@ class AiService {
     for (var i = 0; i < _geminiKeys.length; i++) {
       try {
         final response = await _dio.post(
-          '$_cloudflareWorkerUrl${ApiConstants.geminiEndpoint}',
+          '$_cloudflareWorkerUrl/gemini',
           data: {
             'key': _geminiKeys[_currentGeminiKey],
             'prompt': prompt,
             'context': context,
           },
           options: Options(
-            receiveTimeout: ApiConstants.requestTimeout,
-            sendTimeout: ApiConstants.requestTimeout,
+            receiveTimeout: const Duration(seconds: 30),
+            sendTimeout: const Duration(seconds: 30),
           ),
         );
         return response.data['response'];
@@ -120,15 +176,15 @@ class AiService {
     for (var i = 0; i < _groqKeys.length; i++) {
       try {
         final response = await _dio.post(
-          '$_cloudflareWorkerUrl${ApiConstants.groqEndpoint}',
+          '$_cloudflareWorkerUrl/groq',
           data: {
             'key': _groqKeys[_currentGroqKey],
             'prompt': prompt,
             'context': context,
           },
           options: Options(
-            receiveTimeout: ApiConstants.requestTimeout,
-            sendTimeout: ApiConstants.requestTimeout,
+            receiveTimeout: const Duration(seconds: 30),
+            sendTimeout: const Duration(seconds: 30),
           ),
         );
         return response.data['response'];
@@ -140,21 +196,32 @@ class AiService {
   }
 
   Future<String> generate(String prompt, {String? context}) async {
+    // 1. Try Sarvam AI (primary — always available with default key)
+    try {
+      return await generateWithSarvam(prompt, context: context);
+    } catch (e) {
+      debugPrint('Sarvam AI failed, trying fallbacks: $e');
+    }
+
+    // 2. Try Cloudflare Direct
     if (hasCloudflareCredentials) {
       try {
         return await generateWithCloudflareDirect(prompt, context: context);
       } catch (_) {}
     }
+
+    // 3. Try Gemini (via worker)
     try {
       return await generateWithGemini(prompt, context: context);
     } catch (_) {
+      // 4. Try Groq (via worker)
       try {
         return await generateWithGroq(prompt, context: context);
       } catch (e) {
         if (hasCloudflareCredentials) {
-          throw Exception('Cloudflare AI failed. Check your Account ID and API Token in Settings.');
+          throw Exception('All AI providers failed. Check your API keys in Settings.');
         }
-        throw Exception('All AI providers exhausted. Add API keys in Settings.');
+        throw Exception('Failed to generate response. Please try again.');
       }
     }
   }

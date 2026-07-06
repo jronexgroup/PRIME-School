@@ -63,6 +63,7 @@ class SubjectModel extends Equatable {
     SubjectModel(id: 'geography', name: 'Geography', icon: '🌍', side: 'school', totalChapters: 10),
     SubjectModel(id: 'bengali', name: 'Bengali', icon: '📚', side: 'school', totalChapters: 8),
     SubjectModel(id: 'english', name: 'English', icon: '📗', side: 'school', totalChapters: 10),
+    SubjectModel(id: 'shanku_diary', name: 'প্রফেসর শঙ্কুর ডায়রি', icon: '📖', side: 'school', totalChapters: 6),
   ];
 
   static List<SubjectModel> techSubjects = const [
