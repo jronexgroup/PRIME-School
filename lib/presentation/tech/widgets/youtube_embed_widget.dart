@@ -41,6 +41,7 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
     _controller = YoutubePlayerController.fromVideoId(
       videoId: _videoId!,
       autoPlay: true,
+      startSeconds: _startSeconds > 0 ? _startSeconds.toDouble() : null,
       params: const YoutubePlayerParams(
         showControls: true,
         showFullscreenButton: true,
@@ -52,12 +53,6 @@ class _YoutubeEmbedWidgetState extends State<YoutubeEmbedWidget> {
     _controller!.videoStateStream.listen((state) {
       _currentPosition = state.position.inSeconds;
     });
-
-    if (_startSeconds > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _controller!.seekTo(seconds: _startSeconds.toDouble(), allowSeekAhead: true);
-      });
-    }
   }
 
   String? _extractVideoId(String url) {

@@ -50,7 +50,10 @@ class AiService {
     try {
       final response = await _dio.post(
         url,
-        data: {'messages': messages},
+        data: {
+          'messages': messages,
+          'chat_template_kwargs': {'thinking': false},
+        },
         options: Options(
           headers: {'Authorization': 'Bearer $_cloudflareApiToken'},
           receiveTimeout: const Duration(seconds: 60),
@@ -61,9 +64,11 @@ class AiService {
       debugPrint('Cloudflare AI raw response: $result');
       String text = '';
       if (result is Map && result['result'] is Map) {
-        text = (result['result'] as Map)['response'] as String? ?? '';
+        final r = result['result'] as Map;
+        text = r['response'] as String? ?? r['content'] as String? ?? r['text'] as String? ?? '';
       }
       if (text.trim().isEmpty) {
+        debugPrint('Cloudflare AI: empty response — full result: $result');
         return 'I reviewed your code but could not generate specific feedback right now. Check the solution example for guidance.';
       }
       return text;
