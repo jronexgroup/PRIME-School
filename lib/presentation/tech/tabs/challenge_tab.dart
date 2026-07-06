@@ -57,12 +57,13 @@ class _ChallengeTabState extends State<ChallengeTab> {
         final id = c['question'] as String? ?? '';
         final key = '${widget.chapterId}/${widget.topicId}/$id';
         final submission = submissions[key] as Map<String, dynamic>?;
+        final isCompleted = completedChallenges.contains(key);
 
         if (submission != null) {
           final code = submission['code'] as String? ?? '';
           final feedback = submission['feedback'] as String? ?? '';
           final submissionSolved = submission['solved'] as bool? ?? false;
-          final solved = submissionSolved || completedChallenges.contains(key);
+          final solved = submissionSolved || isCompleted;
 
           final controller = _codeControllers.putIfAbsent(id, () => TextEditingController());
           if (code.isNotEmpty) controller.text = code;
@@ -73,10 +74,14 @@ class _ChallengeTabState extends State<ChallengeTab> {
             _solved[id] = solved;
             _attempts[id] = submission['attempts'] as int? ?? 0;
           } else if (solved) {
-            // Challenge was marked complete but feedback is missing (e.g., _saveSubmission failed)
             _submitted[id] = true;
             _solved[id] = true;
           }
+        } else if (isCompleted) {
+          // Challenge is in completedChallenges but submission data is missing
+          // (e.g., corrupted by dot-in-key bug in older writes, or update failed)
+          _submitted[id] = true;
+          _solved[id] = true;
         }
       }
 
@@ -547,7 +552,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
                 ),
               ),
               child: SizedBox(
-                height: 280,
+                height: 360,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -611,7 +616,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
                     const SizedBox(height: 10),
                     Expanded(
                       child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
+                        physics: const ClampingScrollPhysics(),
                         child: MarkdownText(_aiFeedback[id]!),
                       ),
                     ),

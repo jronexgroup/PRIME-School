@@ -238,7 +238,11 @@ User Question: $message
 
   Future<String> checkAnswer(String question, String userAnswer, String correctAnswer) async {
     final prompt = '''
-Act like a kind teacher helping a beginner student. Check their Python answer and explain like you're talking to a child.
+Act like a kind teacher helping a beginner student. Check their Python answer.
+
+IMPORTANT: The "Example Solution" below is just an EXAMPLE showing one possible answer. 
+Do NOT mark the student wrong just because their answer differs from example values (like names, numbers, or specific text).
+Focus on whether the student's CODE correctly solves the question concept.
 
 Strict output format (BOTH required):
 1. Start with exactly "✓ CORRECT" if the answer is correct, or "✗ INCORRECT" if wrong.
@@ -246,7 +250,7 @@ Strict output format (BOTH required):
 
 Question: $question
 Student's Code: $userAnswer
-Expected Solution: $correctAnswer
+Example Solution (one possible answer — evaluate conceptually, not by exact match): $correctAnswer
 ''';
     return generate(prompt);
   }

@@ -60,8 +60,10 @@ class ProgressService {
       if (attempts != null) 'attempts': attempts,
     };
     try {
+      // Use FieldPath to avoid dot-notation key corruption
+      // challengeKey may contain '.' which Firestore interprets as nested field separator
       await _docRef(subjectId).update({
-        'challengeSubmissions.$challengeKey': data,
+        FieldPath(['challengeSubmissions', challengeKey]): data,
       });
     } catch (_) {
       await _docRef(subjectId).set({
