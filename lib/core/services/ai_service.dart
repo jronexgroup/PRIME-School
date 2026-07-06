@@ -43,7 +43,7 @@ class AiService {
     final url = 'https://api.cloudflare.com/client/v4/accounts/$_cloudflareAccountId/ai/run/$model';
 
     final messages = <Map<String, String>>[
-      {'role': 'system', 'content': 'You are a precise Python tutor. Answer questions directly with accurate code examples. Be concise and factual. Do not roleplay or use fictional quotes.'},
+      {'role': 'system', 'content': 'You are a friendly Python tutor for beginners. Explain concepts like teaching a child — use simple words, relatable examples, and break things down step by step. Always include easy-to-understand code examples. Be patient and encouraging.'},
       {'role': 'user', 'content': context != null ? '$context\n\n$prompt' : prompt},
     ];
 
@@ -63,9 +63,25 @@ class AiService {
       final result = response.data;
       debugPrint('Cloudflare AI raw response: $result');
       String text = '';
-      if (result is Map && result['result'] is Map) {
-        final r = result['result'] as Map;
-        text = r['response'] as String? ?? r['content'] as String? ?? r['text'] as String? ?? '';
+      if (result is Map) {
+        // Kimi K2.6 returns OpenAI-compatible format:
+        // {id, object, created, model, choices: [{message: {content: "..."}}]}
+        if (result['choices'] is List) {
+          final choices = result['choices'] as List;
+          if (choices.isNotEmpty && choices[0] is Map) {
+            final msg = (choices[0] as Map)['message'];
+            if (msg is Map) text = msg['content'] as String? ?? '';
+          }
+        }
+        // Legacy Cloudflare format: {result: {response: "..."}}
+        if (text.isEmpty && result['result'] is Map) {
+          final r = result['result'] as Map;
+          text = r['response'] as String? ?? '';
+        }
+        // Bare response/content at top level
+        if (text.isEmpty) {
+          text = result['response'] as String? ?? result['content'] as String? ?? '';
+        }
       }
       if (text.trim().isEmpty) {
         debugPrint('Cloudflare AI: empty response — full result: $result');
@@ -145,31 +161,32 @@ class AiService {
 
   Future<String> chatWithTopic(String message, String topicContent) async {
     final prompt = '''
-Answer the user's Python question based on this topic content. Do not add fictional quotes or character voices.
-Question: $message
+Teach like explaining to a child. Use very simple words, relatable everyday examples, and step-by-step reasoning. Include a short code example.
+
 Topic Content: $topicContent
+User Question: $message
 ''';
     return generate(prompt);
   }
 
   Future<String> checkAnswer(String question, String userAnswer, String correctAnswer) async {
     final prompt = '''
-Check this Python answer and provide feedback.
+Act like a kind teacher helping a beginner student. Check their Python answer and explain like you're talking to a child.
 Your response MUST start with exactly "✓ CORRECT" if the answer is correct, or "✗ INCORRECT" if wrong.
-Then provide specific feedback.
+Then explain why in simple words with an example.
 
 Question: $question
-User's Answer: $userAnswer
-Correct Answer: $correctAnswer
+Student's Code: $userAnswer
+Expected Solution: $correctAnswer
 ''';
     return generate(prompt);
   }
 
   Future<String> reviewCode(String code, String question) async {
     final prompt = '''
-Review this Python code and provide specific improvement suggestions with before/after code examples.
+Review this Python code like a friendly tutor helping a beginner. Point out what's good first, then suggest improvements in simple words with before/after code examples.
 
-Question: $question
+Goal: $question
 Code:
 $code
 ''';

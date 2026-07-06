@@ -97,11 +97,11 @@ class ContentRagService {
     await loadAllPythonContent();
     final context = getAllContentAsContext();
     final prompt = '''
-Answer the user's question based ONLY on the Python course content below. Do not roleplay or add fictional quotes. Be accurate.
+Teach like explaining to a child. Use very simple words, real-life examples, and break things down step by step. Base your answer ONLY on the Python course content below.
 
 $context
 
-User Question: $question
+Student's Question: $question
 ''';
     return _ai.generate(prompt);
   }
@@ -110,11 +110,11 @@ User Question: $question
     await loadAllPythonContent();
     final context = getChapterContent(chapterId);
     final prompt = '''
-Answer based ONLY on this chapter content. Be accurate and concise.
+Explain like teaching a beginner. Use simple words, relatable examples, and step-by-step guidance. Base your answer ONLY on this chapter content.
 
 $context
 
-User Question: $question
+Student's Question: $question
 ''';
     return _ai.generate(prompt);
   }
