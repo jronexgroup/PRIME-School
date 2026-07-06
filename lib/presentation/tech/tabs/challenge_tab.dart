@@ -46,17 +46,27 @@ class _ChallengeTabState extends State<ChallengeTab> {
 
   Future<void> _loadSubmissions() async {
     try {
-      final submissions = await context.read<ProgressService>().getChallengeSubmissions('python');
+      final progress = context.read<ProgressService>();
+      final submissions = await progress.getChallengeSubmissions(widget.subjectId);
+      final progressData = await progress.getProgress(widget.subjectId);
+      final completedChallenges = List<String>.from(progressData['completedChallenges'] ?? []);
       final challenges = (widget.content['challenges'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
       for (final c in challenges) {
         final id = c['question'] as String? ?? '';
         final key = '${widget.chapterId}/${widget.topicId}/$id';
         final submission = submissions[key] as Map<String, dynamic>?;
+
         if (submission != null) {
           final code = submission['code'] as String? ?? '';
           final feedback = submission['feedback'] as String? ?? '';
-          final solved = submission['solved'] as bool? ?? false;
-          _codeControllers.putIfAbsent(id, () => TextEditingController(text: code));
+          final submissionSolved = submission['solved'] as bool? ?? false;
+          final solved = submissionSolved || completedChallenges.contains(key);
+
+          // Always restore code text (putIfAbsent won't overwrite if build ran first)
+          final controller = _codeControllers.putIfAbsent(id, () => TextEditingController());
+          if (code.isNotEmpty) controller.text = code;
+
           if (feedback.isNotEmpty) {
             _aiFeedback[id] = feedback;
             _submitted[id] = true;
@@ -127,7 +137,19 @@ class _ChallengeTabState extends State<ChallengeTab> {
     try {
       final progress = context.read<ProgressService>();
       final challengeKey = '${widget.chapterId}/${widget.topicId}/$id';
-      await progress.saveChallengeSubmission(widget.subjectId, challengeKey, code, feedback, solved, difficulty);
+      final submissions = await progress.getChallengeSubmissions(widget.subjectId);
+      final existing = submissions[challengeKey] as Map<String, dynamic>?;
+      final attempts = (existing?['attempts'] as int? ?? 0) + 1;
+      await progress.saveChallengeSubmission(
+        widget.subjectId,
+        challengeKey,
+        code,
+        feedback,
+        solved,
+        difficulty,
+        timestamp: DateTime.now().toIso8601String(),
+        attempts: attempts,
+      );
     } catch (_) {}
   }
 

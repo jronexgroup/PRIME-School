@@ -45,28 +45,28 @@ class ProgressService {
     String code,
     String feedback,
     bool solved,
-    String difficulty,
-  ) async {
+    String difficulty, {
+    String? timestamp,
+    int? attempts,
+  }) async {
     final uid = _userId;
     if (uid == null) return;
+    final data = {
+      'code': code,
+      'feedback': feedback,
+      'solved': solved,
+      'difficulty': difficulty,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (attempts != null) 'attempts': attempts,
+    };
     try {
       await _docRef(subjectId).update({
-        'challengeSubmissions.$challengeKey': {
-          'code': code,
-          'feedback': feedback,
-          'solved': solved,
-          'difficulty': difficulty,
-        },
+        'challengeSubmissions.$challengeKey': data,
       });
     } catch (_) {
       await _docRef(subjectId).set({
         'challengeSubmissions': {
-          challengeKey: {
-            'code': code,
-            'feedback': feedback,
-            'solved': solved,
-            'difficulty': difficulty,
-          },
+          challengeKey: data,
         },
         'completedChallenges': <String>[],
         'completedTopics': <String>[],

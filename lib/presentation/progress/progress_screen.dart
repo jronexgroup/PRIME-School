@@ -1,8 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/progress_service.dart';
+import '../../data/models/subject_model.dart';
 
-class ProgressScreen extends StatelessWidget {
+class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
+
+  @override
+  State<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends State<ProgressScreen> {
+  int _streak = 0;
+  final Map<String, double> _subjectProgress = {};
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgress();
+  }
+
+  Future<void> _loadProgress() async {
+    setState(() => _loading = true);
+    try {
+      final progress = context.read<ProgressService>();
+      final allSubjects = [...SubjectModel.schoolSubjects, ...SubjectModel.techSubjects];
+
+      for (final subject in allSubjects) {
+        final data = await progress.getProgress(subject.id);
+        final completedChapters = List<String>.from(data['completedChapters'] ?? []);
+        final totalChapters = subject.totalChapters;
+        _subjectProgress[subject.id] =
+            totalChapters > 0 ? completedChapters.length / totalChapters : 0.0;
+        if (data['streak'] is int) {
+          _streak = (_streak > (data['streak'] as int)) ? _streak : (data['streak'] as int);
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -10,20 +48,25 @@ class ProgressScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Progress')),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStreakCard(isDark),
-            const SizedBox(height: 16),
-            _buildSubjectProgress(isDark),
-            const SizedBox(height: 16),
-            _buildWeeklyChart(isDark),
-          ],
-        ),
-      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _loadProgress,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStreakCard(isDark),
+                    const SizedBox(height: 16),
+                    _buildSubjectProgress(isDark),
+                    const SizedBox(height: 16),
+                    _buildWeeklyChart(isDark),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
@@ -43,7 +86,7 @@ class ProgressScreen extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Center(
+            child: Center(
               child: Text('🔥', style: TextStyle(fontSize: 26)),
             ),
           ),
@@ -52,9 +95,9 @@ class ProgressScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '7 Day Streak!',
-                  style: TextStyle(
+                Text(
+                  '$_streak Day Streak!',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
@@ -62,7 +105,7 @@ class ProgressScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Keep it going!',
+                  _streak > 0 ? 'Keep it going!' : 'Complete a lesson to start your streak!',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 13,
@@ -77,12 +120,7 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildSubjectProgress(bool isDark) {
-    final subjects = [
-      {'name': 'History', 'progress': 0.75, 'icon': '📜'},
-      {'name': 'Life Science', 'progress': 0.45, 'icon': '🔬'},
-      {'name': 'Mathematics', 'progress': 0.60, 'icon': '📐'},
-      {'name': 'Geography', 'progress': 0.30, 'icon': '🌍'},
-    ];
+    final allSubjects = [...SubjectModel.schoolSubjects, ...SubjectModel.techSubjects];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -107,19 +145,19 @@ class ProgressScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          ...subjects.map((subject) {
-            final progress = subject['progress'] as double;
+          ...allSubjects.map((subject) {
+            final progress = _subjectProgress[subject.id] ?? 0.0;
             return Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      Text(subject['icon'] as String, style: const TextStyle(fontSize: 18)),
+                      Text(subject.icon, style: const TextStyle(fontSize: 18)),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          subject['name'] as String,
+                          subject.name,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
