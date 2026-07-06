@@ -72,6 +72,10 @@ class _ChallengeTabState extends State<ChallengeTab> {
             _submitted[id] = true;
             _solved[id] = solved;
             _attempts[id] = submission['attempts'] as int? ?? 0;
+          } else if (solved) {
+            // Challenge was marked complete but feedback is missing (e.g., _saveSubmission failed)
+            _submitted[id] = true;
+            _solved[id] = true;
           }
         }
       }
@@ -145,6 +149,27 @@ class _ChallengeTabState extends State<ChallengeTab> {
     } catch (_) {}
   }
 
+  bool _isCorrectAnswer(String feedback) {
+    final trimmed = feedback.trim();
+
+    // 1. Strict prefix/emoji check
+    if (trimmed.startsWith('✓ CORRECT') || trimmed.startsWith('✅')) return true;
+    if (trimmed.startsWith('✗ INCORRECT')) return false;
+
+    // 2. Structured VERDICT tag anywhere in the text (from updated prompt)
+    if (trimmed.contains('VERDICT: CORRECT')) return true;
+    if (trimmed.contains('VERDICT: INCORRECT')) return false;
+
+    // 3. Loose fallback: word-boundary check on first 300 chars only
+    //    \bcorrect\b matches "correct" but NOT "incorrect" or "correctly"
+    final snippet = trimmed.length > 300 ? trimmed.substring(0, 300) : trimmed;
+    final hasCorrect = RegExp(r'\bcorrect\b', caseSensitive: false).hasMatch(snippet);
+    final hasIncorrect = RegExp(r'\bincorrect\b', caseSensitive: false).hasMatch(snippet);
+    if (hasCorrect && !hasIncorrect) return true;
+
+    return false;
+  }
+
   Future<void> _submitChallenge(Map<String, dynamic> challenge) async {
     final id = challenge['question'] as String? ?? '';
     _codeControllers.putIfAbsent(id, () => TextEditingController());
@@ -169,10 +194,7 @@ class _ChallengeTabState extends State<ChallengeTab> {
       );
       final difficulty = challenge['difficulty'] as String? ?? 'easy';
 
-      // Strict check: AI is instructed to start with exactly "✓ CORRECT" or "✗ INCORRECT"
-      // Using startsWith to avoid matching "correct" inside "incorrect" or explanations
-      final trimmed = feedback.trim();
-      final isCorrect = trimmed.startsWith('✓ CORRECT') || trimmed.startsWith('✅');
+      final isCorrect = _isCorrectAnswer(feedback);
 
       if (isCorrect) {
         _incrementLocalStat(difficulty);

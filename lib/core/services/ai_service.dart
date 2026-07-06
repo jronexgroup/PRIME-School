@@ -239,8 +239,10 @@ User Question: $message
   Future<String> checkAnswer(String question, String userAnswer, String correctAnswer) async {
     final prompt = '''
 Act like a kind teacher helping a beginner student. Check their Python answer and explain like you're talking to a child.
-Your response MUST start with exactly "✓ CORRECT" if the answer is correct, or "✗ INCORRECT" if wrong.
-Then explain why in simple words with an example.
+
+Strict output format (BOTH required):
+1. Start with exactly "✓ CORRECT" if the answer is correct, or "✗ INCORRECT" if wrong.
+2. After your explanation, end with a new line containing ONLY "VERDICT: CORRECT" or "VERDICT: INCORRECT".
 
 Question: $question
 Student's Code: $userAnswer
