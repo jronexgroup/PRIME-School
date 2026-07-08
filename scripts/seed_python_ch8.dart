@@ -182,7 +182,7 @@ Functions se code chhota, readable aur reusable ban jaata hai. Practice karo, fu
             "    return 5 * (f - 32) / 9\n\n"
             "f = int(input('Enter temperature in F: '))\n"
             "c = f_to_c(f)\n"
-            "print(f'{round(c, 2)}C')",
+            "print(round(c, 2), 'C')",
         'difficulty': 'medium',
       },
       {
@@ -191,7 +191,7 @@ Functions se code chhota, readable aur reusable ban jaata hai. Practice karo, fu
         'solution': "def inch_to_cms(inch):\n"
             "    return inch * 2.54\n\n"
             "n = int(input('Enter value in inches: '))\n"
-            "print(f'The corresponding value in cms is {inch_to_cms(n)}')",
+            "print('The corresponding value in cms is', inch_to_cms(n))",
         'difficulty': 'easy',
       },
     ],

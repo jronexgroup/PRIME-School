@@ -114,13 +114,13 @@ Yaad rakho: while loop = condition-based, tab tak chalo jab tak condition True h
       {
         'question': 'While loop ka use karke kisi number ka multiplication table print karo. Jaise user ne 5 diya toh 5x1=5 se 5x10=50 tak.',
         'hint': 'i = 1 se start karo, i <= 10 tak loop chalao, aur har iteration mein num * i print karo.',
-        'solution': "num = int(input(\"Enter a number: \"))\ni = 1\nwhile i <= 10:\n    print(f\"{num} x {i} = {num * i}\")\n    i += 1",
+        'solution': "num = int(input(\"Enter a number: \"))\ni = 1\nwhile i <= 10:\n    print(num, \"x\", i, \"=\", num * i)\n    i += 1",
         'difficulty': 'medium',
       },
       {
         'question': 'While loop ka use karke user se tab tak number input lo jab tak woh positive number na de. Jaise hi positive number de, us number ka table print karo.',
         'hint': 'while loop mein condition rakh lo ki jab tak num <= 0 hai, input lete raho. Phir loop ke baad table print karo.',
-        'solution': "num = int(input(\"Enter a positive number: \"))\nwhile num <= 0:\n    print(\"That's not positive!\")\n    num = int(input(\"Enter again: \"))\n\nprint(f\"Table of {num}:\")\ni = 1\nwhile i <= 10:\n    print(f\"{num} x {i} = {num * i}\")\n    i += 1",
+        'solution': "num = int(input(\"Enter a positive number: \"))\nwhile num <= 0:\n    print(\"That's not positive!\")\n    num = int(input(\"Enter again: \"))\n\nprint(\"Table of\", num, \":\")\ni = 1\nwhile i <= 10:\n    print(num, \"x\", i, \"=\", num * i)\n    i += 1",
         'difficulty': 'hard',
       },
     ],
@@ -203,15 +203,15 @@ Yaad rakho: for loop = collection-based iteration. Koi counter nahi, koi conditi
     ],
     'challenges': [
       {
-        'question': 'Ek list banao jisme 5 fruits ke naam ho. For loop use karke har fruit ka naam uppercase mein print karo.',
-        'hint': 'List banao, phir for fruit in fruits: mein fruit.upper() use karo.',
-        'solution': "fruits = [\"apple\", \"banana\", \"mango\", \"orange\", \"grapes\"]\nfor fruit in fruits:\n    print(fruit.upper())",
+        'question': 'Ek list banao jisme 5 fruits ke naam ho. For loop use karke har fruit ka naam print karo.',
+        'hint': 'List banao, phir for fruit in fruits: likho aur print(fruit) karo.',
+        'solution': "fruits = [\"apple\", \"banana\", \"mango\", \"orange\", \"grapes\"]\nfor fruit in fruits:\n    print(fruit)",
         'difficulty': 'easy',
       },
       {
-        'question': 'Ek program likho jo user se ek string input le aur for loop use karke har character count kare — vowels aur consonants alag.',
-        'hint': 'Vowels = a, e, i, o, u. For loop mein har character check karo ki woh vowel hai ya consonant.',
-        'solution': "text = input(\"Enter a string: \").lower()\nvowels = 0\nconsonants = 0\nfor ch in text:\n    if ch in 'aeiou':\n        vowels += 1\n    elif ch.isalpha():\n        consonants += 1\nprint(f\"Vowels: {vowels}, Consonants: {consonants}\")",
+        'question': 'Ek program likho jo user se ek string input le aur for loop use karke vowels (a, e, i, o, u) aur consonants count kare. Capital aur small dono vowels count karo.',
+        'hint': 'For loop mein har character ko check karo: agar ch in "aeiouAEIOU" hai toh vowel, warna agar (ch >= "a" and ch <= "z") or (ch >= "A" and ch <= "Z") hai toh consonant.',
+        'solution': "text = input(\"Enter a string: \")\nvowels = 0\nconsonants = 0\nfor ch in text:\n    if ch in 'aeiouAEIOU':\n        vowels += 1\n    elif (ch >= 'a' and ch <= 'z') or (ch >= 'A' and ch <= 'Z'):\n        consonants += 1\nprint(\"Vowels:\", vowels, \"Consonants:\", consonants)",
         'difficulty': 'medium',
       },
       {
@@ -320,7 +320,7 @@ Yaad rakho: range ka stop value EXCLUSIVE hota hai — stop ke numbers include n
       {
         'question': 'User se ek number N input lo aur for loop aur range() ka use karke N ka factorial nikaalo. Jaise 5! = 5*4*3*2*1 = 120.',
         'hint': 'Factorial ke liye range(N, 0, -1) use kar sakte ho — reverse order mein multiply karo.',
-        'solution': "n = int(input(\"Enter a number: \"))\nfactorial = 1\nfor i in range(n, 0, -1):\n    factorial *= i\nprint(f\"Factorial of {n} is {factorial}\")",
+        'solution': "n = int(input(\"Enter a number: \"))\nfactorial = 1\nfor i in range(n, 0, -1):\n    factorial *= i\nprint(\"Factorial of\", n, \"is\", factorial)",
         'difficulty': 'hard',
       },
     ],
@@ -419,13 +419,13 @@ Yaad rakho: else = loop bina break ke complete hua. Break lag gaya toh else nahi
       {
         'question': 'Ek program likho jo check kare ki koi number prime hai ya nahi using for-else pattern. Hint: agar koi divisor mil gaya (2 se n-1 tak) toh break, else mein prime declare karo.',
         'hint': 'range(2, n) mein loop chalao. Agar n % i == 0 hai toh break. Else mein "Prime" print karo.',
-        'solution': "n = int(input(\"Enter a number: \"))\nfor i in range(2, n):\n    if n % i == 0:\n        print(f\"{n} is not prime\")\n        break\nelse:\n    print(f\"{n} is prime\")",
+        'solution': "n = int(input(\"Enter a number: \"))\nfor i in range(2, n):\n    if n % i == 0:\n        print(n, \"is not prime\")\n        break\nelse:\n    print(n, \"is prime\")",
         'difficulty': 'medium',
       },
       {
-        'question': 'Ek list of names lo. User se ek naam input lo. For-else use karke check karo ki naam list mein hai ya nahi. Agar hai toh uski index bhi batao.',
-        'hint': 'enumerate() use kar sakte ho index track karne ke liye. For i, name in enumerate(names): if name == target: print index and break.',
-        'solution': "names = [\"Harry\", \"Shubham\", \"Rohan\", \"Ali\", \"Sara\"]\ntarget = input(\"Enter name to search: \")\n\nfor i, name in enumerate(names):\n    if name.lower() == target.lower():\n        print(f\"Found at index {i}\")\n        break\nelse:\n    print(\"Not found\")",
+        'question': 'Ek list of numbers lo. User se ek number input lo. For-else use karke check karo ki number list mein hai ya nahi. Agar hai toh uski index (counter variable se) bhi batao.',
+        'hint': 'Ek counter variable index = 0 lo. For loop mein agar num == target ho toh index print karo aur break. Har iteration mein index += 1 karo.',
+        'solution': "numbers = [10, 20, 30, 40, 50]\ntarget = int(input(\"Enter a number to search: \"))\n\nindex = 0\nfor num in numbers:\n    if num == target:\n        print(\"Found at index\", index)\n        break\n    index += 1\nelse:\n    print(\"Not found\")",
         'difficulty': 'hard',
       },
     ],
@@ -533,7 +533,7 @@ Yaad rakho:
       {
         'question': 'Ek program likho jo prime numbers 1 se 50 tak find kare. Break ka use karo — jaise hi koi divisor mil jaye, break karo aur next number check karo. Continue nahi, break use karna hai!',
         'hint': 'Har number ke liye 2 se n-1 tak loop chalao. Agar n % i == 0 hai toh break (prime nahi). Agar loop normally complete ho (for-else) toh prime print karo.',
-        'solution': "for num in range(2, 51):\n    for i in range(2, num):\n        if num % i == 0:\n            break\n    else:\n        print(f\"{num} is prime\")",
+        'solution': "for num in range(2, 51):\n    for i in range(2, num):\n        if num % i == 0:\n            break\n    else:\n        print(num, \"is prime\")",
         'difficulty': 'hard',
       },
     ],

@@ -158,9 +158,10 @@ Bahut simple hai. Chalo ab writing files seekhte hain!''',
       },
       {
         'question': 'Ek log.txt file hai. Program likho jo check kare ki usme "python" word present hai ya nahi. Agar hai toh "Yes python is present" print karo.',
-        'hint': 'Same approach as twinkle problem. with statement use kar sakte ho bina close() bhoolne ki tension ke. open() karo, read() karo, check karo.',
-        'solution': "with open('log.txt') as f:\n"
-            "    content = f.read()\n\n"
+        'hint': 'open() se file kholo, .read() se content padho, close() karo. Phir "in" operator se check karo.',
+        'solution': "f = open('log.txt')\n"
+            "content = f.read()\n"
+            "f.close()\n\n"
             "if('python' in content):\n"
             "    print('Yes python is present')\n"
             "else:\n"
@@ -168,18 +169,17 @@ Bahut simple hai. Chalo ab writing files seekhte hain!''',
         'difficulty': 'easy',
       },
       {
-        'question': 'log.txt file mein "python" word kis line number par hai yeh find karo. Pehli line mein mila toh "Line no: 1" print karo. break laga do milte hi.',
-        'hint': 'readlines() use karo jo saari lines ki list return karta hai. Phir enumerate ya counter variable se line number track karo. for loop mein har line check karo.',
-        'solution': "with open('log.txt') as f:\n"
-            "    lines = f.readlines()\n\n"
-            "lineno = 1\n"
-            "for line in lines:\n"
-            "    if('python' in line):\n"
-            "        print(f'Yes python is present. Line no: {lineno}')\n"
-            "        break\n"
-            "    lineno += 1\n\n"
-            "else:\n"
-            "    print('No Python is not present')",
+        'question': 'Ek log.txt file hai. Program likho jo count kare ki "python" word us file mein kitni baar aaya hai. open(), read() aur close() use karo.',
+        'hint': 'Pehle file open karo, read karo, close karo. Phir for loop mein har position check karo using slicing content[i:i+6] == "python".',
+        'solution': "f = open('log.txt')\n"
+            "content = f.read()\n"
+            "f.close()\n\n"
+            "word = 'python'\n"
+            "count = 0\n"
+            "for i in range(len(content) - len(word) + 1):\n"
+            "    if content[i:i+len(word)] == word:\n"
+            "        count += 1\n\n"
+            "print('Total count:', count)",
         'difficulty': 'medium',
       },
     ],
@@ -317,44 +317,41 @@ Yaad rakho: "w" overwrite karta hai, "a" append karta hai. Dono mein file exist 
     ],
     'challenges': [
       {
-        'question': 'Ek game hai jo random score generate karta hai (1 se 62). Agar naya score hiscore.txt mein saved score se zyada hai toh usse update karo. Program likho.',
-        'hint': 'random.randint(1, 62) se score generate karo. hiscore.txt read karo, int mein convert karo. Compare karo, agar zyada hai toh str(score) write karo.',
-        'solution': "import random\n\n"
-            "score = random.randint(1, 62)\n"
-            "with open('hiscore.txt') as f:\n"
-            "    hiscore = f.read()\n"
-            "    if(hiscore != ''):\n"
-            "        hiscore = int(hiscore)\n"
-            "    else:\n"
-            "        hiscore = 0\n\n"
-            "print(f'Your score: {score}')\n"
-            "if(score > hiscore):\n"
-            "    with open('hiscore.txt', 'w') as f:\n"
-            "        f.write(str(score))",
+        'question': 'Ek program likho jo user se 5 cities ke naam input le aur har naam ko cities.txt file mein write kare (har naam nayi line mein). open() aur close() use karo.',
+        'hint': "open('cities.txt', 'w') se file write mode mein kholo. range(5) ka for loop chalao, input() se naam lo aur f.write(name + '\\n') se write karo. Close mat bhoolna.",
+        'solution': "f = open('cities.txt', 'w')\n"
+            "for i in range(5):\n"
+            "    name = input('Enter city name: ')\n"
+            "    f.write(name + '\\n')\n"
+            "f.close()\n"
+            "print('Cities saved!')",
         'difficulty': 'medium',
       },
       {
         'question': 'Ek program likho jo 2 se 20 tak multiplication tables generate kare aur har table ko alag file mein save kare (jaise table_2.txt, table_3.txt, etc.).',
-        'hint': 'def generateTable(n) function banao jo table string banaye. range(1,11) se loop karo. f"{n} X {i} = {n*i}" format use karo. Phir with statement se file mein write karo.',
+        'hint': 'def generateTable(n) function banao jo table string banaye. range(1,11) se loop karo. str(n) + " X " + str(i) + " = " + str(n*i) use karo. open() aur close() se file handle karo.',
         'solution': "def generateTable(n):\n"
             "    table = ''\n"
             "    for i in range(1, 11):\n"
-            "        table += f'{n} X {i} = {n*i}\\n'\n"
-            "    with open(f'tables/table_{n}.txt', 'w') as f:\n"
-            "        f.write(table)\n\n"
+            "        table += str(n) + ' X ' + str(i) + ' = ' + str(n * i) + '\\n'\n"
+            "    f = open('tables/table_' + str(n) + '.txt', 'w')\n"
+            "    f.write(table)\n"
+            "    f.close()\n\n"
             "for i in range(2, 21):\n"
             "    generateTable(i)",
         'difficulty': 'hard',
       },
       {
         'question': 'Ek file.txt hai jisme "Donkey" word hai. Program likho jo "Donkey" ko "######" se replace kare aur file ko update kare.',
-        'hint': 'Pehle "r" mode mein read karo. Phir str.replace("Donkey", "######") se replace karo. Phir "w" mode mein write karo - overwrite original file.',
+        'hint': 'Pehle "r" mode mein open karo, read karo, close karo. Phir str.replace("Donkey", "######") se replace karo. Phir "w" mode mein open karo, write karo, close karo.',
         'solution': "word = 'Donkey'\n\n"
-            "with open('file.txt', 'r') as f:\n"
-            "    content = f.read()\n\n"
+            "f = open('file.txt', 'r')\n"
+            "content = f.read()\n"
+            "f.close()\n\n"
             "contentNew = content.replace(word, '######')\n\n"
-            "with open('file.txt', 'w') as f:\n"
-            "    f.write(contentNew)",
+            "f = open('file.txt', 'w')\n"
+            "f.write(contentNew)\n"
+            "f.close()",
         'difficulty': 'easy',
       },
     ],

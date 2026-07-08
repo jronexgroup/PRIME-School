@@ -225,7 +225,7 @@ Yaad rakho: Relational operators compare karte hain, logical operators combine k
       {
         'question': 'Ek program likho jo user se do numbers input le aur relational operators ke saath unhe compare kare — >, <, >=, <=, ==, != sab print karo.',
         'hint': 'input() se do numbers lo, phir har operator ka result print karo with a descriptive message.',
-        'solution': "a = int(input(\"First number: \"))\nb = int(input(\"Second number: \"))\nprint(f\"{a} > {b}: {a > b}\")\nprint(f\"{a} < {b}: {a < b}\")\nprint(f\"{a} >= {b}: {a >= b}\")\nprint(f\"{a} <= {b}: {a <= b}\")\nprint(f\"{a} == {b}: {a == b}\")\nprint(f\"{a} != {b}: {a != b}\")",
+        'solution': "a = int(input(\"First number: \"))\nb = int(input(\"Second number: \"))\nprint(a, \">\", b, \":\", a > b)\nprint(a, \"<\", b, \":\", a < b)\nprint(a, \">=\", b, \":\", a >= b)\nprint(a, \"<=\", b, \":\", a <= b)\nprint(a, \"==\", b, \":\", a == b)\nprint(a, \"!=\", b, \":\", a != b)",
         'difficulty': 'easy',
       },
       {
@@ -235,9 +235,9 @@ Yaad rakho: Relational operators compare karte hain, logical operators combine k
         'difficulty': 'medium',
       },
       {
-        'question': 'Ek program likho jo user ka username aur password check kare. Username length kam se kam 5 characters ho (and operator) aur password strong ho (8+ chars and contains number). else mein proper message do.',
-        'hint': 'len() se length check karo. Number check karne ke liye any(char.isdigit() for char in password) use kar sakte ho.',
-        'solution': "username = input(\"Username: \")\npassword = input(\"Password: \")\n\nif len(username) >= 5 and len(password) >= 8:\n    has_number = any(char.isdigit() for char in password)\n    if has_number:\n        print(\"Registration successful!\")\n    else:\n        print(\"Password must contain a number\")\nelse:\n    print(\"Username must be 5+ chars and password 8+ chars\")",
+        'question': 'Ek program likho jo user se ek year input le aur check kare ki woh leap year hai ya nahi. Leap year woh hota hai jo 4 se divisible ho, lekin 100 se divisible na ho (except agar 400 se bhi divisible ho). Logical operators (and, or) use karo.',
+        'hint': 'Year ko 4 se check karo AND (year 100 se divisible nahi ho OR year 400 se divisible ho). Is combination mein and aur or dono use honge.',
+        'solution': "year = int(input(\"Enter a year: \"))\nif year % 4 == 0 and (year % 100 != 0 or year % 400 == 0):\n    print(year, \"is a leap year\")\nelse:\n    print(year, \"is not a leap year\")",
         'difficulty': 'hard',
       },
     ],

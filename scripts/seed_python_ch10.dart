@@ -110,9 +110,9 @@ Bahut simple hai na? Chalo ab agle topic mein methods aur constructor dekhenge!'
     ],
     'challenges': [
       {
-        'question': 'Ek Programmer class banao jiska company attribute "Microsoft" ho. Constructor mein name, salary aur pin initialize karo. Do objects banao - Harry aur Rohan - aur unki details print karo.',
-        'hint': 'class Programmer: company = "Microsoft" likho. __init__ mein self.name, self.salary, self.pin set karo. p = Programmer("Harry", 1200000, 245001) se object banao.',
-        'solution': "class Programmer:\n    company = \"Microsoft\"\n    def __init__(self, name, salary, pin):\n        self.name = name\n        self.salary = salary\n        self.pin = pin\n\np = Programmer(\"Harry\", 1200000, 245001)\nprint(p.name, p.salary, p.pin, p.company)\nr = Programmer(\"Rohan\", 1200000, 245001)\nprint(r.name, r.salary, r.pin, r.company)",
+        'question': 'Ek Employee class banao jiska company attribute "Google" ho. Do objects banao - Harry aur Rohan. Harry ka naam, salary aur language manually set karo. Rohan ka naam, salary aur language manually set karo (bina constructor ke). Sabki details print karo.',
+        'hint': 'class Employee: company = "Google" likho. harry = Employee() se object banao. Phir harry.name = "Harry" aise sab attributes manually set karo.',
+        'solution': "class Employee:\n    company = \"Google\"\n\nharry = Employee()\nharry.name = \"Harry\"\nharry.salary = 100000\nharry.language = \"Python\"\n\nrohan = Employee()\nrohan.name = \"Rohan\"\nrohan.salary = 120000\nrohan.language = \"Java\"\n\nprint(harry.name, harry.salary, harry.language, harry.company)\nprint(rohan.name, rohan.salary, rohan.language, rohan.company)",
         'difficulty': 'easy',
       },
       {
@@ -122,9 +122,9 @@ Bahut simple hai na? Chalo ab agle topic mein methods aur constructor dekhenge!'
         'difficulty': 'medium',
       },
       {
-        'question': 'Ek Library class banao jisme class attribute totalBooks = 0 ho. Har baar jab koi naya object bane, totalBooks increment ho. Har object ka apna bookName aur author ho. Do objects banao aur totalBooks print karo.',
-        'hint': 'totalBooks ko class attribute rakho. __init__ mein Library.totalBooks += 1 karo. Har object mein self.bookName aur self.author set karo.',
-        'solution': "class Library:\n    totalBooks = 0\n    def __init__(self, bookName, author):\n        self.bookName = bookName\n        self.author = author\n        Library.totalBooks += 1\n\nb1 = Library(\"Python Basics\", \"Harry\")\nb2 = Library(\"OOP Guide\", \"Rohan\")\nprint(b1.bookName, b1.author)\nprint(b2.bookName, b2.author)\nprint(\"Total books:\", Library.totalBooks)",
+        'question': 'Ek Student class banao jisme school = "ABC School" class attribute ho. 3 students ke objects banao - har student ka naam, grade aur marks manually set karo (bina constructor ke). Har naye object banne par Student.totalStudents += 1 class attribute increment karo manually. Phir sabki details aur total students print karo.',
+        'hint': 'class Student: school = "ABC School" and totalStudents = 0 likho. s1 = Student() ke baad s1.name, s1.grade, s1.marks set karo. Phir Student.totalStudents += 1 karo.',
+        'solution': "class Student:\n    school = \"ABC School\"\n    totalStudents = 0\n\ns1 = Student()\ns1.name = \"Ali\"\ns1.grade = \"A\"\ns1.marks = 95\nStudent.totalStudents += 1\n\ns2 = Student()\ns2.name = \"Sara\"\ns2.grade = \"B\"\ns2.marks = 82\nStudent.totalStudents += 1\n\ns3 = Student()\ns3.name = \"John\"\ns3.grade = \"A\"\ns3.marks = 91\nStudent.totalStudents += 1\n\nprint(s1.name, s1.grade, s1.marks, s1.school)\nprint(s2.name, s2.grade, s2.marks, s2.school)\nprint(s3.name, s3.grade, s3.marks, s3.school)\nprint(\"Total students:\", Student.totalStudents)",
         'difficulty': 'hard',
       },
     ],
@@ -226,19 +226,19 @@ Toh recap:
       {
         'question': 'Ek Calculator class banao jo n number le. Usme square, cube aur squareroot methods ho. Ek @staticmethod hello() bhi ho jo "Hello there!" print kare. n = 4 ke liye sab methods call karo.',
         'hint': '__init__(self, n) mein self.n = n karo. square() mein self.n*self.n, cube() mein self.n*self.n*self.n, squareroot() mein self.n**1/2. @staticmethod se hello() define karo.',
-        'solution': "class Calculator:\n    def __init__(self, n):\n        self.n = n\n    def square(self):\n        print(f\"The square is {self.n*self.n}\")\n    def cube(self):\n        print(f\"The cube is {self.n*self.n*self.n}\")\n    def squareroot(self):\n        print(f\"The squareroot is {self.n**1/2}\")\n    @staticmethod\n    def hello():\n        print(\"Hello there!\")\n\na = Calculator(4)\na.hello()\na.square()\na.cube()\na.squareroot()",
+        'solution': "class Calculator:\n    def __init__(self, n):\n        self.n = n\n    def square(self):\n        print(\"The square is\", self.n * self.n)\n    def cube(self):\n        print(\"The cube is\", self.n * self.n * self.n)\n    def squareroot(self):\n        print(\"The squareroot is\", self.n ** 1 / 2)\n    @staticmethod\n    def hello():\n        print(\"Hello there!\")\n\na = Calculator(4)\na.hello()\na.square()\na.cube()\na.squareroot()",
         'difficulty': 'easy',
       },
       {
-        'question': 'Ek Train class banao jisme trainNo ho. Usme book(fro, to), getStatus() aur getFare(fro, to) methods ho. getFare random fare generate kare 222 se 5555 ke beech mein. Train 12399 ke liye Rampur se Delhi tak book karo aur fare dekho.',
-        'hint': 'from random import randint import karo. __init__ mein trainNo store karo. getFare mein randint(222, 5555) use karo. t = Train(12399) se object banao.',
-        'solution': "from random import randint\n\nclass Train:\n    def __init__(self, trainNo):\n        self.trainNo = trainNo\n    def book(self, fro, to):\n        print(f\"Ticket is booked in train no: {self.trainNo} from {fro} to {to}\")\n    def getStatus(self):\n        print(f\"Train no: {self.trainNo} is running on time\")\n    def getFare(self, fro, to):\n        print(f\"Ticket fare in train no: {self.trainNo} from {fro} to {to} is {randint(222, 5555)}\")\n\nt = Train(12399)\nt.book(\"Rampur\", \"Delhi\")\nt.getStatus()\nt.getFare(\"Rampur\", \"Delhi\")",
+        'question': 'Ek Train class banao jisme trainNo ho. Usme book(fro, to), getStatus() aur getFare(fro, to) methods ho. getFare fare calculate kare using formula: (len(fro) + len(to)) * 50. Train 12399 ke liye Rampur se Delhi tak book karo aur fare dekho.',
+        'hint': '__init__ mein trainNo store karo. getFare mein len() se fro aur to ki length nikaalo, multiply by 50. t = Train(12399) se object banao.',
+        'solution': "class Train:\n    def __init__(self, trainNo):\n        self.trainNo = trainNo\n    def book(self, fro, to):\n        print(\"Ticket is booked in train no:\", self.trainNo, \"from\", fro, \"to\", to)\n    def getStatus(self):\n        print(\"Train no:\", self.trainNo, \"is running on time\")\n    def getFare(self, fro, to):\n        fare = (len(fro) + len(to)) * 50\n        print(\"Ticket fare in train no:\", self.trainNo, \"from\", fro, \"to\", to, \"is\", fare)\n\nt = Train(12399)\nt.book(\"Rampur\", \"Delhi\")\nt.getStatus()\nt.getFare(\"Rampur\", \"Delhi\")",
         'difficulty': 'medium',
       },
       {
         'question': 'Same Train class lo, lekin iss baar self ki jagah har ek method mein alag-alag parameter naam do - __init__ mein slf, book mein harry, getStatus mein self, getFare mein khud. Kya yeh kaam karega? Code likh kar test karo.',
         'hint': 'Python mein first parameter ka naam kuch bhi ho sakta hai - convention sirf self hai. Lekin agar aap slf ya harry ya kuch aur likhenge, tab bhi kaam karega. Jaise: def __init__(slf, trainNo): slf.trainNo = trainNo',
-        'solution': "from random import randint\n\nclass Train:\n    def __init__(slf, trainNo):\n        slf.trainNo = trainNo\n    def book(harry, fro, to):\n        print(f\"Ticket is booked in train no: {harry.trainNo} from {fro} to {to}\")\n    def getStatus(self):\n        print(f\"Train no: {self.trainNo} is running on time\")\n    def getFare(self, fro, to):\n        print(f\"Ticket fare in train no: {self.trainNo} from {fro} to {to} is {randint(222, 5555)}\")\n\nt = Train(12399)\nt.book(\"Rampur\", \"Delhi\")\nt.getStatus()\nt.getFare(\"Rampur\", \"Delhi\")",
+        'solution': "class Train:\n    def __init__(slf, trainNo):\n        slf.trainNo = trainNo\n    def book(harry, fro, to):\n        print(\"Ticket is booked in train no:\", harry.trainNo, \"from\", fro, \"to\", to)\n    def getStatus(self):\n        print(\"Train no:\", self.trainNo, \"is running on time\")\n    def getFare(self, fro, to):\n        fare = (len(fro) + len(to)) * 50\n        print(\"Ticket fare in train no:\", self.trainNo, \"from\", fro, \"to\", to, \"is\", fare)\n\nt = Train(12399)\nt.book(\"Rampur\", \"Delhi\")\nt.getStatus()\nt.getFare(\"Rampur\", \"Delhi\")",
         'difficulty': 'hard',
       },
     ],
