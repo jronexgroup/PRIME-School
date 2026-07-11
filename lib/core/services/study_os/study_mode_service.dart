@@ -50,7 +50,7 @@ class StudyModeService {
 
     // Dim screen slightly for reading
     try {
-      await ScreenBrightness.instance.application
+      await ScreenBrightness.instance
           .setApplicationScreenBrightness(0.8);
     } catch (_) {}
 
@@ -93,7 +93,7 @@ class StudyModeService {
     await WakelockPlus.disable();
 
     try {
-      await ScreenBrightness.instance.application
+      await ScreenBrightness.instance
           .resetApplicationScreenBrightness();
     } catch (_) {}
 

@@ -3,7 +3,7 @@ import '../models/reward.dart';
 class AchievementDefinitions {
   AchievementDefinitions._();
 
-  static const List<Achievement> all = [
+  static final List<Achievement> all = [
     Achievement(
       id: 'first_session',
       name: 'First Steps',

@@ -25,8 +25,8 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
   late final StreamSubscription<int> _elapsedSub;
   late final StreamSubscription<int> _distractionSub;
   late final StreamSubscription<int> _pomodoroTickSub;
-  late final StreamSubscription<String> _pomodoroPhaseSub;
-  late final StreamSubscription<bool> _faceDownSub;
+  late final StreamSubscription<dynamic> _pomodoroPhaseSub;
+  StreamSubscription<bool>? _faceDownSub;
   late final StreamSubscription<dynamic> _scheduleSub;
 
   StudySession? _currentSession;
@@ -74,7 +74,7 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
 
     _faceDownSub = focusDetectorService?.faceDownStream.listen((isDown) {
       studyModeService.setFaceDown(isDown);
-    }) ?? const StreamSubscription<bool>.empty();
+    });
 
     _scheduleSub = scheduleService.onScheduleTrigger.listen((schedule) {
       add(StudyOsScheduleTriggered(schedule.id));
@@ -130,7 +130,7 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
     }
   }
 
-  Future<void> _onEndSession(StudyOsSessionState? event, Emitter<StudyOsState> emit) async {
+  Future<void> _onEndSession(StudyOsEndSession event, Emitter<StudyOsState> emit) async {
     if (state.sessionState == StudyOsSessionState.idle) return;
 
     try {
@@ -190,7 +190,7 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
     final endMin = schedule.endHour * 60 + schedule.endMinute;
 
     if (currentMinute == endMin) {
-      await _onEndSession(null, emit);
+      await _onEndSession(const StudyOsEndSession(), emit);
     }
   }
 
@@ -240,7 +240,7 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
     _distractionSub.cancel();
     _pomodoroTickSub.cancel();
     _pomodoroPhaseSub.cancel();
-    _faceDownSub.cancel();
+    _faceDownSub?.cancel();
     _scheduleSub.cancel();
     studyModeService.dispose();
     scheduleService.dispose();

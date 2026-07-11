@@ -1,43 +1,15 @@
-import 'package:hive/hive.dart';
-
-part 'study_schedule.g.dart';
-
-@HiveType(typeId: 10)
-class StudySchedule extends HiveObject {
-  @HiveField(0)
+class StudySchedule {
   final String id;
-
-  @HiveField(1)
   String name;
-
-  @HiveField(2)
   int startHour;
-
-  @HiveField(3)
   int startMinute;
-
-  @HiveField(4)
   int endHour;
-
-  @HiveField(5)
   int endMinute;
-
-  @HiveField(6)
   List<int> daysOfWeek;
-
-  @HiveField(7)
   bool active;
-
-  @HiveField(8)
   String? subjectId;
-
-  @HiveField(9)
   bool enablePomodoro;
-
-  @HiveField(10)
   int pomodoroFocusMinutes;
-
-  @HiveField(11)
   int pomodoroBreakMinutes;
 
   StudySchedule({

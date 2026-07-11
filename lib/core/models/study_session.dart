@@ -1,46 +1,16 @@
-import 'package:hive/hive.dart';
-
-part 'study_session.g.dart';
-
-@HiveType(typeId: 11)
-class StudySession extends HiveObject {
-  @HiveField(0)
+class StudySession {
   final String id;
-
-  @HiveField(1)
   final DateTime startedAt;
-
-  @HiveField(2)
   DateTime? endedAt;
-
-  @HiveField(3)
   final int plannedDurationMinutes;
-
-  @HiveField(4)
   int actualDurationSeconds;
-
-  @HiveField(5)
   int distractionCount;
-
-  @HiveField(6)
   String? subjectId;
-
-  @HiveField(7)
   String? scheduleId;
-
-  @HiveField(8)
   int xpEarned;
-
-  @HiveField(9)
   bool completed;
-
-  @HiveField(10)
   bool faceDownBonus;
-
-  @HiveField(11)
   int pomodoroCycles;
-
-  @HiveField(12)
   String? notes;
 
   StudySession({

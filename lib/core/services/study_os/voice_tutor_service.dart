@@ -1,4 +1,4 @@
-import '../../../services/tts_service.dart';
+import '../tts_service.dart';
 
 class VoiceTutorService {
   final TtsService _ttsService;
@@ -25,7 +25,7 @@ class VoiceTutorService {
   Future<void> speak(String text) async {
     _isSpeaking = true;
     try {
-      await _ttsService.setLanguage('en-US');
+      _ttsService.setLanguage('en-US');
       await _ttsService.speak(text);
     } catch (_) {}
     _isSpeaking = false;

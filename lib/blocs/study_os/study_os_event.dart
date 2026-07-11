@@ -7,7 +7,9 @@ abstract class StudyOsEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class StudyOsStarted extends StudyOsEvent {}
+class StudyOsStarted extends StudyOsEvent {
+  const StudyOsStarted();
+}
 
 class StudyOsStartSession extends StudyOsEvent {
   final String? scheduleId;
@@ -26,13 +28,21 @@ class StudyOsStartSession extends StudyOsEvent {
   List<Object?> get props => [scheduleId, subjectId, durationMinutes, enablePomodoro];
 }
 
-class StudyOsEndSession extends StudyOsEvent {}
+class StudyOsEndSession extends StudyOsEvent {
+  const StudyOsEndSession();
+}
 
-class StudyOsPauseSession extends StudyOsEvent {}
+class StudyOsPauseSession extends StudyOsEvent {
+  const StudyOsPauseSession();
+}
 
-class StudyOsResumeSession extends StudyOsEvent {}
+class StudyOsResumeSession extends StudyOsEvent {
+  const StudyOsResumeSession();
+}
 
-class StudyOsDistractionDetected extends StudyOsEvent {}
+class StudyOsDistractionDetected extends StudyOsEvent {
+  const StudyOsDistractionDetected();
+}
 
 class StudyOsTimerTick extends StudyOsEvent {
   final int elapsedSeconds;
@@ -52,7 +62,9 @@ class StudyOsScheduleTriggered extends StudyOsEvent {
   List<Object?> get props => [scheduleId];
 }
 
-class StudyOsLoadSchedules extends StudyOsEvent {}
+class StudyOsLoadSchedules extends StudyOsEvent {
+  const StudyOsLoadSchedules();
+}
 
 class StudyOsAddSchedule extends StudyOsEvent {
   final Map<String, dynamic> scheduleData;

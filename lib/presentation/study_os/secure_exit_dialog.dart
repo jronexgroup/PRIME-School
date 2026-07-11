@@ -41,11 +41,8 @@ class _SecureExitDialogState extends State<SecureExitDialog> {
 
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Authenticate to exit Study Mode',
-        options: const AuthenticationOptions(
-          biometricOnly: false,
-          stickyAuth: true,
-          useErrorDialogs: true,
-        ),
+        biometricOnly: false,
+        persistAcrossBackgrounding: true,
       );
 
       if (authenticated && mounted) {

@@ -6,7 +6,7 @@ import '../../models/study_schedule.dart';
 
 class StudyScheduleService {
   static const _boxName = 'study_schedules';
-  late Box<StudySchedule> _box;
+  late Box _box;
   Timer? _checkTimer;
   final _scheduleTriggerController = StreamController<StudySchedule>.broadcast();
   Stream<StudySchedule> get onScheduleTrigger => _scheduleTriggerController.stream;
@@ -15,13 +15,15 @@ class StudyScheduleService {
   final _uuid = const Uuid();
 
   Future<void> initialize() async {
-    _box = await Hive.openBox<StudySchedule>(_boxName);
+    _box = await Hive.openBox(_boxName);
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings();
-    await _notifications.initialize(
-      const InitializationSettings(android: androidSettings, iOS: iosSettings),
-    );
+    try {
+      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const iosSettings = DarwinInitializationSettings();
+      await _notifications.initialize(
+        settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+      );
+    } catch (_) {}
 
     _startScheduleChecker();
   }
@@ -38,8 +40,7 @@ class StudyScheduleService {
   void _checkSchedules() {
     final now = DateTime.now();
     final currentMinute = now.hour * 60 + now.minute;
-
-    for (final schedule in _box.values) {
+    for (final schedule in _box.values.cast<StudySchedule>()) {
       if (!schedule.active) continue;
       if (!schedule.daysOfWeek.contains(now.weekday)) continue;
 
@@ -66,10 +67,10 @@ class StudyScheduleService {
   Future<void> _sendReminder(StudySchedule schedule) async {
     try {
       await _notifications.show(
-        schedule.id.hashCode,
-        'Study Time Soon!',
-        '${schedule.name} starts in 5 minutes (${schedule.startTimeFormatted})',
-        const NotificationDetails(
+        id: schedule.id.hashCode,
+        title: 'Study Time Soon!',
+        body: '${schedule.name} starts in 5 minutes (${schedule.startTimeFormatted})',
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'study_reminders',
             'Study Reminders',
@@ -111,7 +112,7 @@ class StudyScheduleService {
   }
 
   Future<void> updateSchedule(StudySchedule schedule) async {
-    await schedule.save();
+    await _box.put(schedule.id, schedule);
   }
 
   Future<void> deleteSchedule(String id) async {
@@ -119,26 +120,26 @@ class StudyScheduleService {
   }
 
   Future<void> toggleSchedule(String id) async {
-    final schedule = _box.get(id);
+    final schedule = _box.get(id) as StudySchedule?;
     if (schedule != null) {
       schedule.active = !schedule.active;
-      await schedule.save();
+      await _box.put(schedule.id, schedule);
     }
   }
 
-  List<StudySchedule> getAllSchedules() => _box.values.toList();
+  List<StudySchedule> getAllSchedules() => _box.values.cast<StudySchedule>().toList();
 
-  StudySchedule? getSchedule(String id) => _box.get(id);
+  StudySchedule? getSchedule(String id) => _box.get(id) as StudySchedule?;
 
   List<StudySchedule> getActiveSchedulesForToday() {
     final today = DateTime.now().weekday;
-    return _box.values.where((s) => s.active && s.daysOfWeek.contains(today)).toList();
+    return _box.values.cast<StudySchedule>().where((s) => s.active && s.daysOfWeek.contains(today)).toList();
   }
 
   bool isStudyTimeNow() {
     final now = DateTime.now();
     final currentMinute = now.hour * 60 + now.minute;
-    for (final schedule in _box.values) {
+    for (final schedule in _box.values.cast<StudySchedule>()) {
       if (!schedule.active) continue;
       if (!schedule.daysOfWeek.contains(now.weekday)) continue;
       final startMin = schedule.startHour * 60 + schedule.startMinute;

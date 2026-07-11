@@ -5,11 +5,11 @@ import '../../models/study_analytics.dart';
 class StudyAnalyticsService {
   static const _sessionsBox = 'study_sessions';
   static const _dailyBox = 'study_daily_stats';
-  late Box<StudySession> _sessionsBoxRef;
+  late Box _sessionsBoxRef;
   late Box _dailyBoxRef;
 
   Future<void> initialize() async {
-    _sessionsBoxRef = await Hive.openBox<StudySession>(_sessionsBox);
+    _sessionsBoxRef = await Hive.openBox(_sessionsBox);
     _dailyBoxRef = await Hive.openBox(_dailyBox);
   }
 
@@ -55,7 +55,7 @@ class StudyAnalyticsService {
 
   WeeklyStats getWeeklyStats(int year, int weekNumber) {
     final weekly = WeeklyStats(year: year, weekNumber: weekNumber);
-    final sessions = _sessionsBoxRef.values.where((s) {
+    final sessions = _sessionsBoxRef.values.cast<StudySession>().where((s) {
       final isoWeek = _getWeekNumber(s.startedAt);
       return isoWeek.$1 == year && isoWeek.$2 == weekNumber;
     });
@@ -71,7 +71,7 @@ class StudyAnalyticsService {
 
   MonthlyStats getMonthlyStats(int year, int month) {
     final monthly = MonthlyStats(year: year, month: month);
-    final sessions = _sessionsBoxRef.values.where((s) {
+    final sessions = _sessionsBoxRef.values.cast<StudySession>().where((s) {
       return s.startedAt.year == year && s.startedAt.month == month;
     });
 
@@ -84,10 +84,10 @@ class StudyAnalyticsService {
     return monthly;
   }
 
-  List<StudySession> getAllSessions() => _sessionsBoxRef.values.toList();
+  List<StudySession> getAllSessions() => _sessionsBoxRef.values.cast<StudySession>().toList();
 
   List<StudySession> getSessionsForRange(DateTime start, DateTime end) =>
-      _sessionsBoxRef.values
+      _sessionsBoxRef.values.cast<StudySession>()
           .where((s) => !s.startedAt.isBefore(start) && !s.startedAt.isAfter(end))
           .toList();
 
@@ -95,18 +95,18 @@ class StudyAnalyticsService {
 
   int getTotalMinutes() {
     int total = 0;
-    for (final s in _sessionsBoxRef.values) {
+    for (final s in _sessionsBoxRef.values.cast<StudySession>()) {
       total += s.actualDurationSeconds;
     }
     return total ~/ 60;
   }
 
   int getCleanSessionCount() =>
-      _sessionsBoxRef.values.where((s) => s.distractionCount == 0).length;
+      _sessionsBoxRef.values.cast<StudySession>().where((s) => s.distractionCount == 0).length;
 
   int getTotalDistractions() {
     int total = 0;
-    for (final s in _sessionsBoxRef.values) {
+    for (final s in _sessionsBoxRef.values.cast<StudySession>()) {
       total += s.distractionCount;
     }
     return total;
@@ -114,18 +114,18 @@ class StudyAnalyticsService {
 
   int getTotalPomodoroCycles() {
     int total = 0;
-    for (final s in _sessionsBoxRef.values) {
+    for (final s in _sessionsBoxRef.values.cast<StudySession>()) {
       total += s.pomodoroCycles;
     }
     return total;
   }
 
   int getFaceDownBonusCount() =>
-      _sessionsBoxRef.values.where((s) => s.faceDownBonus).length;
+      _sessionsBoxRef.values.cast<StudySession>().where((s) => s.faceDownBonus).length;
 
   Map<String, int> getSubjectTimeBreakdown() {
     final breakdown = <String, int>{};
-    for (final s in _sessionsBoxRef.values) {
+    for (final s in _sessionsBoxRef.values.cast<StudySession>()) {
       final subject = s.subjectId ?? 'Unspecified';
       breakdown[subject] = (breakdown[subject] ?? 0) + s.actualDurationSeconds;
     }
