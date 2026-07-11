@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
+enum AppMode { school, tech, studyOs }
+
 class SchoolTechToggle extends StatelessWidget {
-  final bool isSchool;
-  final Function(bool) onToggle;
+  final AppMode currentMode;
+  final Function(AppMode) onToggle;
 
   const SchoolTechToggle({
     super.key,
-    required this.isSchool,
+    required this.currentMode,
     required this.onToggle,
   });
 
@@ -27,18 +29,28 @@ class SchoolTechToggle extends StatelessWidget {
           _ToggleOption(
             icon: Icons.school_rounded,
             label: 'School',
-            isSelected: isSchool,
+            isSelected: currentMode == AppMode.school,
             color: AppColors.school,
             isDark: isDark,
-            onTap: () => onToggle(true),
+            onTap: () => onToggle(AppMode.school),
           ),
+          const SizedBox(width: 2),
           _ToggleOption(
             icon: Icons.computer_rounded,
             label: 'Tech',
-            isSelected: !isSchool,
+            isSelected: currentMode == AppMode.tech,
             color: AppColors.tech,
             isDark: isDark,
-            onTap: () => onToggle(false),
+            onTap: () => onToggle(AppMode.tech),
+          ),
+          const SizedBox(width: 2),
+          _ToggleOption(
+            icon: Icons.psychology_rounded,
+            label: 'Study',
+            isSelected: currentMode == AppMode.studyOs,
+            color: AppColors.warning,
+            isDark: isDark,
+            onTap: () => onToggle(AppMode.studyOs),
           ),
         ],
       ),
@@ -69,7 +81,7 @@ class _ToggleOption extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
           color: isSelected ? color : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
@@ -79,16 +91,16 @@ class _ToggleOption extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 15,
+              size: 14,
               color: isSelected
                   ? Colors.white
                   : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isSelected
                     ? Colors.white

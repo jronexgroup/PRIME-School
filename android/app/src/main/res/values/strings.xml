@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PRIME School</string>
+    <string name="accessibility_service_description">Study OS uses Accessibility Service to detect distracting apps during study sessions and help you stay focused. No data is collected or transmitted.</string>
+</resources>

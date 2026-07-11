@@ -9,9 +9,41 @@ import '../../core/constants/app_colors.dart';
 import '../widgets/school_tech_toggle.dart';
 import '../widgets/subject_card.dart';
 import '../subjects/subject_list_screen.dart';
+import '../study_os/study_os_home.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _searchController = TextEditingController();
+  final _searchFocusNode = FocusNode();
+
+  AppMode _appSideToMode(AppSide side) {
+    switch (side) {
+      case AppSide.school: return AppMode.school;
+      case AppSide.tech: return AppMode.tech;
+      case AppSide.studyOs: return AppMode.studyOs;
+    }
+  }
+
+  AppSide _modeToAppSide(AppMode mode) {
+    switch (mode) {
+      case AppMode.school: return AppSide.school;
+      case AppMode.tech: return AppSide.tech;
+      case AppMode.studyOs: return AppSide.studyOs;
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +53,9 @@ class HomeScreen extends StatelessWidget {
       builder: (context, contentState) {
         return BlocBuilder<ExamBloc, ExamState>(
           builder: (context, examState) {
+            if (contentState.currentSide == AppSide.studyOs) {
+              return const StudyOsHome();
+            }
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
@@ -49,7 +84,9 @@ class HomeScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Class 9 · WB Madhyamik',
+                                  contentState.currentSide == AppSide.school
+                                      ? 'Class 9 · WB Madhyamik'
+                                      : 'Coding & Technology',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: isDark
@@ -60,48 +97,69 @@ class HomeScreen extends StatelessWidget {
                               ],
                             ),
                             SchoolTechToggle(
-                              isSchool: contentState.currentSide == AppSide.school,
-                              onToggle: (isSchool) {
+                              currentMode: _appSideToMode(contentState.currentSide),
+                              onToggle: (mode) {
+                                final side = _modeToAppSide(mode);
                                 context.read<ContentBloc>().add(
-                                      ContentSideChanged(
-                                        isSchool ? AppSide.school : AppSide.tech,
-                                      ),
+                                      ContentSideChanged(side),
                                     );
                               },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
-                        // Search Bar
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                              width: 0.5,
+                        const SizedBox(height: 16),
+                        // Search Bar (functional)
+                        TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          decoration: InputDecoration(
+                            hintText: 'Search topics, chapters...',
+                            hintStyle: TextStyle(
+                              fontSize: 14,
+                              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              size: 20,
+                              color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(Icons.clear_rounded,
+                                        size: 18,
+                                        color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {});
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                width: 0.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                                width: 0.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: AppColors.primary,
+                                width: 1.5,
+                              ),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.search_rounded,
-                                size: 20,
-                                color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Search topics, chapters...',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          onChanged: (_) => setState(() {}),
                         ),
                       ],
                     ),

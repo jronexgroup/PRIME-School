@@ -18,6 +18,7 @@ class AppColors {
 
   static const Color school = Color(0xFF6366F1);
   static const Color tech = Color(0xFF06B6D4);
+  static const Color studyOs = Color(0xFFF59E0B);
 
   // Light Theme
   static const Color backgroundLight = Color(0xFFF8FAFC);

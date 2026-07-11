@@ -12,6 +12,14 @@ import 'core/services/sarvam_service.dart';
 import 'core/services/cache_service.dart';
 import 'core/services/content_rag_service.dart';
 import 'core/services/progress_service.dart';
+import 'core/services/study_os/study_mode_service.dart';
+import 'core/services/study_os/study_schedule_service.dart';
+import 'core/services/study_os/study_analytics_service.dart';
+import 'core/services/study_os/reward_service.dart';
+import 'core/services/study_os/pomodoro_service.dart';
+import 'core/services/study_os/smart_notes_service.dart';
+import 'core/services/study_os/voice_tutor_service.dart';
+import 'core/services/study_os/focus_detector_service.dart';
 import 'providers/theme_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'blocs/auth/auth_bloc.dart';
@@ -20,6 +28,7 @@ import 'blocs/content/content_bloc.dart';
 import 'blocs/study/study_bloc.dart';
 import 'blocs/quiz/quiz_bloc.dart';
 import 'blocs/exam/exam_bloc.dart';
+import 'blocs/study_os/study_os_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +53,16 @@ class PrimeSchoolRoot extends StatelessWidget {
     final contentRagService = ContentRagService(firestore: firestoreService, ai: aiService);
     final progressService = ProgressService();
 
+    // Study OS services
+    final studyModeService = StudyModeService();
+    final scheduleService = StudyScheduleService();
+    final analyticsService = StudyAnalyticsService();
+    final rewardService = RewardService();
+    final pomodoroService = PomodoroService();
+    final smartNotesService = SmartNotesService();
+    final voiceTutorService = VoiceTutorService(ttsService);
+    final focusDetectorService = FocusDetectorService();
+
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: authService),
@@ -54,6 +73,16 @@ class PrimeSchoolRoot extends StatelessWidget {
         RepositoryProvider.value(value: sarvamService),
         RepositoryProvider.value(value: contentRagService),
         RepositoryProvider.value(value: progressService),
+
+        // Study OS services
+        RepositoryProvider.value(value: studyModeService),
+        RepositoryProvider.value(value: scheduleService),
+        RepositoryProvider.value(value: analyticsService),
+        RepositoryProvider.value(value: rewardService),
+        RepositoryProvider.value(value: pomodoroService),
+        RepositoryProvider.value(value: smartNotesService),
+        RepositoryProvider.value(value: voiceTutorService),
+        RepositoryProvider.value(value: focusDetectorService),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -76,6 +105,18 @@ class PrimeSchoolRoot extends StatelessWidget {
           ),
           BlocProvider(
             create: (_) => ExamBloc(firestoreService: firestoreService),
+          ),
+          BlocProvider(
+            create: (_) => StudyOsBloc(
+              studyModeService: studyModeService,
+              scheduleService: scheduleService,
+              pomodoroService: pomodoroService,
+              rewardService: rewardService,
+              analyticsService: analyticsService,
+              smartNotesService: smartNotesService,
+              voiceTutorService: voiceTutorService,
+              focusDetectorService: focusDetectorService,
+            ),
           ),
         ],
         child: MultiProvider(
