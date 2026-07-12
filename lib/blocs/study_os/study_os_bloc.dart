@@ -29,6 +29,8 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
   StreamSubscription<bool>? _faceDownSub;
   StreamSubscription<void>? _leaveAttemptSub;
   late final StreamSubscription<dynamic> _scheduleSub;
+  StreamSubscription<void>? _studyModeStartSub;
+  StreamSubscription<void>? _studyModeEndSub;
 
   StudySession? _currentSession;
 
@@ -84,6 +86,17 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
     _leaveAttemptSub = studyModeService.leaveAttemptStream.listen((_) {
       studyModeService.recordDistraction();
       studyModeService.reengageLockTask();
+    });
+
+    _studyModeStartSub = scheduleService.onStudyModeStart.listen((_) {
+      add(StudyOsStartSession(
+        durationMinutes: 60,
+        enablePomodoro: true,
+      ));
+    });
+
+    _studyModeEndSub = scheduleService.onStudyModeEnd.listen((_) {
+      add(const StudyOsEndSession());
     });
   }
 
@@ -248,6 +261,8 @@ class StudyOsBloc extends Bloc<StudyOsEvent, StudyOsState> {
     _pomodoroPhaseSub.cancel();
     _faceDownSub?.cancel();
     _leaveAttemptSub?.cancel();
+    _studyModeStartSub?.cancel();
+    _studyModeEndSub?.cancel();
     _scheduleSub.cancel();
     studyModeService.dispose();
     scheduleService.dispose();

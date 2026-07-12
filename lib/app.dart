@@ -11,6 +11,8 @@ import 'providers/api_key_provider.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/ai_service.dart';
 import 'core/services/study_os/study_mode_service.dart';
+import 'core/services/study_os/study_mode_auth_service.dart';
+import 'core/services/study_os/notification_handler.dart';
 import 'presentation/widgets/custom_bottom_nav.dart';
 import 'presentation/home/home_screen.dart';
 import 'presentation/subjects/subject_list_screen.dart';
@@ -18,6 +20,7 @@ import 'presentation/progress/progress_screen.dart';
 import 'presentation/settings/settings_screen.dart';
 import 'presentation/auth/login_screen.dart';
 import 'presentation/study_os/secure_exit_dialog.dart';
+import 'presentation/study_os/password_dialog.dart';
 
 class PrimeSchoolApp extends StatelessWidget {
   const PrimeSchoolApp({super.key});
@@ -69,6 +72,28 @@ class _MainShellState extends State<MainShell> {
     super.initState();
     context.read<ContentBloc>().add(ContentSubjectsLoaded());
     _loadApiKeys();
+    _checkPendingNotificationAction();
+  }
+
+  Future<void> _checkPendingNotificationAction() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+
+    final handler = context.read<NotificationHandler>();
+    final startId = handler.consumePendingStart();
+    if (startId != null && !_studyMode) {
+      final service = context.read<StudyModeService>();
+      final success = await service.startStudyMode();
+      if (mounted && success) setState(() => _studyMode = true);
+      return;
+    }
+
+    final endId = handler.consumePendingEnd();
+    if (endId != null && _studyMode) {
+      final service = context.read<StudyModeService>();
+      await service.endStudyMode();
+      if (mounted) setState(() => _studyMode = false);
+    }
   }
 
   Future<void> _loadApiKeys() async {
@@ -85,21 +110,41 @@ class _MainShellState extends State<MainShell> {
   }
 
   Future<void> _toggleStudyMode(bool enable) async {
-    if (enable) {
-      final service = context.read<StudyModeService>();
-      final success = await service.startStudyMode();
-      if (mounted && success) setState(() => _studyMode = true);
-    } else {
+    if (!enable) {
       _showExitConfirmation();
+      return;
     }
+
+    final auth = context.read<StudyModeAuthService>();
+    final hasPassword = await auth.isPasswordSet();
+
+    if (!hasPassword && mounted) {
+      final passwordSet = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => PasswordSetupDialog(
+          auth: auth,
+          onComplete: () => Navigator.of(ctx).pop(true),
+        ),
+      );
+      if (passwordSet != true) return;
+    }
+
+    final service = context.read<StudyModeService>();
+    final success = await service.startStudyMode();
+    if (mounted && success) setState(() => _studyMode = true);
   }
 
   void _showExitConfirmation() {
+    final auth = context.read<StudyModeAuthService>();
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => SecureExitDialog(onExit: _exitStudyMode),
-    ).then((_) {});
+      builder: (ctx) => SecureExitDialog(
+        auth: auth,
+        onExit: _exitStudyMode,
+      ),
+    );
   }
 
   void _exitStudyMode() async {
@@ -115,7 +160,6 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: Column(
         children: [
-          // Study Mode Banner
           if (_studyMode)
             Container(
               width: double.infinity,
@@ -179,7 +223,6 @@ class _MainShellState extends State<MainShell> {
                 ],
               ),
             ),
-          // Main content
           Expanded(
             child: _buildBody(),
           ),

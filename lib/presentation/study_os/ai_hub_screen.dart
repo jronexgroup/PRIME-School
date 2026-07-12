@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/study_os/ai_hub_service.dart';
 
@@ -12,16 +12,50 @@ class AiHubScreen extends StatefulWidget {
 
 class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final Map<AiHubTab, WebViewController> _controllers = {};
+  final Map<AiHubTab, bool> _loadingStates = {};
+
+  WebViewController _createController(String url) {
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageStarted: (_) {
+            if (mounted) {
+              setState(() {});
+            }
+          },
+          onPageFinished: (_) {
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(url));
+
+    return controller;
+  }
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: AiHubTab.values.length, vsync: this);
+
+    for (final tab in AiHubTab.values) {
+      if (tab == AiHubTab.courses) continue;
+      final url = AiHubService.tabUrls[tab]!;
+      _controllers[tab] = _createController(url);
+      _loadingStates[tab] = true;
+    }
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    for (final controller in _controllers.values) {
+      controller.clearCache();
+    }
     super.dispose();
   }
 
@@ -62,8 +96,50 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
       return _buildCoursesHub(isDark);
     }
 
-    final url = AiHubService.tabUrls[tab]!;
-    return _buildWebViewTab(tab, url, isDark);
+    final controller = _controllers[tab];
+    if (controller == null) {
+      return const Center(child: Text('Failed to load page'));
+    }
+
+    return Stack(
+      children: [
+        WebViewWidget(controller: controller),
+        _buildUrlBar(controller, isDark),
+      ],
+    );
+  }
+
+  Widget _buildUrlBar(WebViewController controller, bool isDark) {
+    return FutureBuilder<String?>(
+      future: controller.currentUrl(),
+      builder: (context, snapshot) {
+        final url = snapshot.data ?? '';
+        return Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            color: isDark ? AppColors.cardDark : AppColors.dividerLight,
+            child: Row(
+              children: [
+                Icon(Icons.lock_rounded, size: 10, color: AppColors.success),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    url,
+                    style: TextStyle(fontSize: 9, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.refresh_rounded, size: 14, color: AppColors.studyOs),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildCoursesHub(bool isDark) {
@@ -90,62 +166,6 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
         ],
       ),
     );
-  }
-
-  Widget _buildWebViewTab(AiHubTab tab, String url, bool isDark) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          color: isDark ? AppColors.cardDark : AppColors.dividerLight,
-          child: Row(
-            children: [
-              Icon(Icons.lock_rounded, size: 12, color: AppColors.success),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(url, style: TextStyle(fontSize: 10, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
-              ),
-              Icon(Icons.open_in_new_rounded, size: 14, color: AppColors.studyOs),
-            ],
-          ),
-        ),
-        Expanded(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(AiHubService.tabIcons[tab], size: 48, color: AppColors.studyOs.withValues(alpha: 0.5)),
-                const SizedBox(height: 16),
-                Text(AiHubService.tabNames[tab]!, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
-                  child: Text(
-                    'Open $url in your browser to use this AI tool.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 13, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                OutlinedButton.icon(
-                  onPressed: () => _openUrl(url),
-                  icon: const Icon(Icons.open_in_browser_rounded, size: 16),
-                  label: const Text('Open in Browser'),
-                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.studyOs),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }
 

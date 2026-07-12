@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 import 'app.dart';
 import 'core/services/firebase_service.dart';
 import 'core/services/auth_service.dart';
@@ -20,6 +21,8 @@ import 'core/services/study_os/pomodoro_service.dart';
 import 'core/services/study_os/smart_notes_service.dart';
 import 'core/services/study_os/voice_tutor_service.dart';
 import 'core/services/study_os/focus_detector_service.dart';
+import 'core/services/study_os/study_mode_auth_service.dart';
+import 'core/services/study_os/notification_handler.dart';
 import 'providers/theme_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'blocs/auth/auth_bloc.dart';
@@ -30,8 +33,33 @@ import 'blocs/quiz/quiz_bloc.dart';
 import 'blocs/exam/exam_bloc.dart';
 import 'blocs/study_os/study_os_bloc.dart';
 
+const _workmanagerTaskName = 'com.prime_school.schedule_reschedule';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    if (task == _workmanagerTaskName) {
+      try {
+        final scheduleService = StudyScheduleService();
+        await scheduleService.initialize(
+          onNotificationTap: (_) {},
+        );
+        await scheduleService.rescheduleAll();
+        scheduleService.dispose();
+      } catch (_) {}
+    }
+    return Future.value(true);
+  });
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false,
+  );
+
   await FirebaseService.initialize();
   await CacheService().initialize();
 
@@ -55,6 +83,7 @@ class PrimeSchoolRoot extends StatelessWidget {
 
     // Study OS services
     final studyModeService = StudyModeService();
+    final notificationHandler = NotificationHandler();
     final scheduleService = StudyScheduleService();
     final analyticsService = StudyAnalyticsService();
     final rewardService = RewardService();
@@ -62,6 +91,19 @@ class PrimeSchoolRoot extends StatelessWidget {
     final smartNotesService = SmartNotesService();
     final voiceTutorService = VoiceTutorService(ttsService);
     final focusDetectorService = FocusDetectorService();
+    final studyModeAuthService = StudyModeAuthService();
+
+    scheduleService.initialize(
+      onNotificationTap: notificationHandler.onNotificationResponse,
+    );
+
+    Workmanager().registerPeriodicTask(
+      _workmanagerTaskName,
+      _workmanagerTaskName,
+      frequency: const Duration(hours: 6),
+      constraints: Constraints(networkType: NetworkType.connected),
+      existingWorkPolicy: ExistingWorkPolicy.keep,
+    );
 
     return MultiRepositoryProvider(
       providers: [
@@ -76,6 +118,7 @@ class PrimeSchoolRoot extends StatelessWidget {
 
         // Study OS services
         RepositoryProvider.value(value: studyModeService),
+        RepositoryProvider.value(value: notificationHandler),
         RepositoryProvider.value(value: scheduleService),
         RepositoryProvider.value(value: analyticsService),
         RepositoryProvider.value(value: rewardService),
@@ -83,6 +126,7 @@ class PrimeSchoolRoot extends StatelessWidget {
         RepositoryProvider.value(value: smartNotesService),
         RepositoryProvider.value(value: voiceTutorService),
         RepositoryProvider.value(value: focusDetectorService),
+        RepositoryProvider.value(value: studyModeAuthService),
       ],
       child: MultiBlocProvider(
         providers: [

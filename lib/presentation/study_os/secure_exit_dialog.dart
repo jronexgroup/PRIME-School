@@ -1,65 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:local_auth/local_auth.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/study_os/study_mode_auth_service.dart';
 import '../../blocs/study_os/study_os_bloc.dart';
 import '../../blocs/study_os/study_os_event.dart';
+import 'password_dialog.dart';
 
 class SecureExitDialog extends StatefulWidget {
   final VoidCallback? onExit;
+  final StudyModeAuthService? auth;
 
-  const SecureExitDialog({super.key, this.onExit});
+  const SecureExitDialog({super.key, this.onExit, this.auth});
 
   @override
   State<SecureExitDialog> createState() => _SecureExitDialogState();
 }
 
 class _SecureExitDialogState extends State<SecureExitDialog> {
-  final _localAuth = LocalAuthentication();
-  bool _isAuthenticating = false;
+  final _passwordCtrl = TextEditingController();
   String _error = '';
+  bool _obscure = true;
 
   @override
-  void initState() {
-    super.initState();
-    _tryBiometric();
+  void dispose() {
+    _passwordCtrl.dispose();
+    super.dispose();
   }
 
-  Future<void> _tryBiometric() async {
-    setState(() {
-      _isAuthenticating = true;
-      _error = '';
-    });
-
-    try {
-      final isAvailable = await _localAuth.canCheckBiometrics || await _localAuth.isDeviceSupported();
-      if (!isAvailable) {
-        setState(() {
-          _isAuthenticating = false;
-          _error = 'No biometric or PIN available. Use the button below to exit.';
-        });
-        return;
-      }
-
-      final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to exit Study Mode',
-        biometricOnly: false,
-        persistAcrossBackgrounding: true,
-      );
-
-      if (authenticated && mounted) {
-        _exitStudyMode();
-      } else {
-        setState(() {
-          _isAuthenticating = false;
-          _error = 'Authentication failed. Try again.';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isAuthenticating = false;
-        _error = 'Error: $e';
-      });
+  Future<void> _verifyAndExit() async {
+    final auth = widget.auth ?? context.read<StudyModeAuthService>();
+    final ok = await auth.verifyPassword(_passwordCtrl.text);
+    if (ok && mounted) {
+      _exitStudyMode();
+    } else if (mounted) {
+      setState(() => _error = 'Incorrect password');
     }
   }
 
@@ -86,53 +60,46 @@ class _SecureExitDialogState extends State<SecureExitDialog> {
           const SizedBox(height: 16),
           Text('Exit Study Mode?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight)),
           const SizedBox(height: 8),
-          Text('Your progress will be saved.', style: TextStyle(fontSize: 13, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
+          Text('Enter your password to exit.', style: TextStyle(fontSize: 13, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
           const SizedBox(height: 20),
-
-          if (_isAuthenticating)
-            const Column(
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('Authenticating...', style: TextStyle(fontSize: 12)),
-              ],
-            )
-          else ...[
-            if (_error.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(_error, style: const TextStyle(fontSize: 12, color: AppColors.error), textAlign: TextAlign.center),
-              ),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _tryBiometric,
-                icon: const Icon(Icons.fingerprint_rounded, size: 20),
-                label: const Text('Authenticate & Exit'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.studyOs,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+          TextField(
+            controller: _passwordCtrl,
+            obscureText: _obscure,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Study Mode Password',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              suffixIcon: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, size: 18),
+                onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: TextButton.icon(
-                onPressed: _exitStudyMode,
-                icon: const Icon(Icons.exit_to_app_rounded, size: 18),
-                label: const Text('Exit Without Auth'),
-                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          ),
+          if (_error.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(_error, style: const TextStyle(color: AppColors.error, fontSize: 12)),
+            ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _verifyAndExit,
+              icon: const Icon(Icons.lock_open_rounded, size: 20),
+              label: const Text('Exit Study Mode'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.studyOs,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-            const SizedBox(height: 4),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(fontSize: 13)),
-            ),
-          ],
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(fontSize: 13)),
+          ),
         ],
       ),
     );

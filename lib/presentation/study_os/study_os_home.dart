@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/models/study_schedule.dart';
 import '../../core/services/study_os/study_schedule_service.dart';
 import '../../core/services/study_os/study_mode_service.dart';
+import '../../core/services/study_os/study_mode_auth_service.dart';
 import '../../blocs/study_os/study_os_bloc.dart';
 import '../../blocs/study_os/study_os_event.dart';
 import '../../blocs/study_os/study_os_state.dart';
@@ -12,6 +13,7 @@ import 'analytics_screen.dart';
 import 'rewards_screen.dart';
 import 'ai_hub_screen.dart';
 import 'pomodoro_screen.dart';
+import 'password_dialog.dart';
 
 class StudyOsHome extends StatefulWidget {
   const StudyOsHome({super.key});
@@ -55,6 +57,38 @@ class _StudyOsHomeState extends State<StudyOsHome> {
         },
       ),
     );
+  }
+
+  void _deleteScheduleWithAuth(StudySchedule schedule) async {
+    final auth = context.read<StudyModeAuthService>();
+    final verified = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => PasswordVerifyDialog(
+        auth: auth,
+        title: 'Delete Schedule',
+        message: 'Enter your password to delete "${schedule.name}".',
+        onVerified: () => Navigator.of(ctx).pop(true),
+      ),
+    );
+    if (verified == true) {
+      context.read<StudyOsBloc>().add(StudyOsDeleteSchedule(schedule.id));
+    }
+  }
+
+  void _toggleScheduleWithAuth(StudySchedule schedule) async {
+    final auth = context.read<StudyModeAuthService>();
+    final verified = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => PasswordVerifyDialog(
+        auth: auth,
+        title: schedule.active ? 'Disable Schedule' : 'Enable Schedule',
+        message: 'Enter your password to ${schedule.active ? 'disable' : 'enable'} "${schedule.name}".',
+        onVerified: () => Navigator.of(ctx).pop(true),
+      ),
+    );
+    if (verified == true) {
+      context.read<StudyOsBloc>().add(StudyOsToggleSchedule(schedule.id));
+    }
   }
 
   @override
@@ -185,22 +219,28 @@ class _StudyOsHomeState extends State<StudyOsHome> {
                       if (schedules.isEmpty)
                         Text('No schedules yet. Tap + to create one.', style: TextStyle(fontSize: 12, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight))
                       else
-                        ...schedules.take(3).map((s) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: s.active ? AppColors.success.withValues(alpha: 0.15) : AppColors.textTertiaryDark.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(4),
+                        ...schedules.take(3).map((s) => GestureDetector(
+                          onLongPress: () => _deleteScheduleWithAuth(s),
+                          onTap: () => _toggleScheduleWithAuth(s),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: s.active ? AppColors.success.withValues(alpha: 0.15) : AppColors.textTertiaryDark.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(s.active ? 'Active' : 'Off', style: TextStyle(fontSize: 9, color: s.active ? AppColors.success : AppColors.textTertiaryDark, fontWeight: FontWeight.w600)),
                                 ),
-                                child: Text(s.active ? 'Active' : 'Off', style: TextStyle(fontSize: 9, color: s.active ? AppColors.success : AppColors.textTertiaryDark, fontWeight: FontWeight.w600)),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(s.name, style: TextStyle(fontSize: 12, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight))),
-                              Text('${s.startTimeFormatted}–${s.endTimeFormatted}', style: TextStyle(fontSize: 11, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
-                            ],
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(s.name, style: TextStyle(fontSize: 12, color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight))),
+                                Text('${s.startTimeFormatted}–${s.endTimeFormatted}', style: TextStyle(fontSize: 11, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight)),
+                                const SizedBox(width: 4),
+                                Icon(Icons.delete_outline_rounded, size: 14, color: AppColors.error.withValues(alpha: 0.5)),
+                              ],
+                            ),
                           ),
                         )),
                       const SizedBox(height: 8),

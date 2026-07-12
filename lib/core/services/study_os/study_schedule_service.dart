@@ -8,20 +8,37 @@ class StudyScheduleService {
   static const _boxName = 'study_schedules';
   late Box _box;
   Timer? _checkTimer;
+
+  static const String channelStart = 'study_auto_start';
+  static const String channelEnd = 'study_auto_end';
+  static const String channelReminder = 'study_reminders';
+  static const String payloadPrefixStart = 'study_start:';
+  static const String payloadPrefixEnd = 'study_end:';
+
   final _scheduleTriggerController = StreamController<StudySchedule>.broadcast();
   Stream<StudySchedule> get onScheduleTrigger => _scheduleTriggerController.stream;
 
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final _studyModeStartController = StreamController<String?>.broadcast();
+  Stream<String?> get onStudyModeStart => _studyModeStartController.stream;
+
+  final _studyModeEndController = StreamController<String?>.broadcast();
+  Stream<String?> get onStudyModeEnd => _studyModeEndController.stream;
+
+  final FlutterLocalNotificationsPlugin notifications = FlutterLocalNotificationsPlugin();
   final _uuid = const Uuid();
 
-  Future<void> initialize() async {
+  String? pendingStartScheduleId;
+  String? pendingEndScheduleId;
+
+  Future<void> initialize({void Function(NotificationResponse)? onNotificationTap}) async {
     _box = await Hive.openBox(_boxName);
 
     try {
       const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       const iosSettings = DarwinInitializationSettings();
-      await _notifications.initialize(
+      await notifications.initialize(
         settings: const InitializationSettings(android: androidSettings, iOS: iosSettings),
+        onDidReceiveNotificationResponse: onNotificationTap,
       );
     } catch (_) {}
 
@@ -33,7 +50,6 @@ class StudyScheduleService {
     _checkTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       _checkSchedules();
     });
-    // Also check immediately
     _checkSchedules();
   }
 
@@ -47,32 +63,94 @@ class StudyScheduleService {
       final startMin = schedule.startHour * 60 + schedule.startMinute;
       final endMin = schedule.endHour * 60 + schedule.endMinute;
 
-      // Trigger 5 minutes before start
       if (currentMinute == startMin - 5) {
         _sendReminder(schedule);
       }
 
-      // Start at scheduled time
       if (currentMinute == startMin) {
         _scheduleTriggerController.add(schedule);
+        _studyModeStartController.add(schedule.id);
       }
 
-      // End at scheduled time
       if (currentMinute == endMin) {
-        _scheduleTriggerController.add(schedule); // Will be handled as end by listener
+        _scheduleTriggerController.add(schedule);
+        _studyModeEndController.add(schedule.id);
+      }
+    }
+  }
+
+  Future<void> scheduleAutoNotifications(StudySchedule schedule) async {
+    try {
+      await notifications.cancel(id: schedule.id.hashCode);
+      await notifications.cancel(id: schedule.id.hashCode + 1);
+      await notifications.cancel(id: schedule.id.hashCode + 2);
+    } catch (_) {}
+
+    try {
+      final now = DateTime.now();
+      final startTime = DateTime(now.year, now.month, now.day, schedule.startHour, schedule.startMinute);
+      final endTime = DateTime(now.year, now.month, now.day, schedule.endHour, schedule.endMinute);
+
+      if (startTime.isAfter(now) || startTime.isAtSameMomentAs(now)) {
+        await notifications.periodicallyShow(
+          id: schedule.id.hashCode,
+          title: 'Study Time!',
+          body: '${schedule.name} — Tap to start focused learning',
+          repeatInterval: RepeatInterval.daily,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              channelStart,
+              'Study Auto-Start',
+              importance: Importance.max,
+              priority: Priority.max,
+              fullScreenIntent: true,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: '${payloadPrefixStart}${schedule.id}',
+        );
+      }
+
+      if (endTime.isAfter(now) || endTime.isAtSameMomentAs(now)) {
+        await notifications.periodicallyShow(
+          id: schedule.id.hashCode + 1,
+          title: 'Study Session Complete!',
+          body: '${schedule.name} has ended. Great work!',
+          repeatInterval: RepeatInterval.daily,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              channelEnd,
+              'Study Auto-End',
+              importance: Importance.high,
+              priority: Priority.high,
+            ),
+            iOS: DarwinNotificationDetails(),
+          ),
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: '${payloadPrefixEnd}${schedule.id}',
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> rescheduleAll() async {
+    for (final schedule in _box.values.cast<StudySchedule>()) {
+      if (schedule.active) {
+        await scheduleAutoNotifications(schedule);
       }
     }
   }
 
   Future<void> _sendReminder(StudySchedule schedule) async {
     try {
-      await _notifications.show(
-        id: schedule.id.hashCode,
+      await notifications.show(
+        id: schedule.id.hashCode + 2,
         title: 'Study Time Soon!',
         body: '${schedule.name} starts in 5 minutes (${schedule.startTimeFormatted})',
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
-            'study_reminders',
+            channelReminder,
             'Study Reminders',
             importance: Importance.high,
             priority: Priority.high,
@@ -86,6 +164,7 @@ class StudyScheduleService {
 
   Future<void> addSchedule(StudySchedule schedule) async {
     await _box.put(schedule.id, schedule);
+    await scheduleAutoNotifications(schedule);
   }
 
   Future<StudySchedule> createSchedule({
@@ -113,10 +192,16 @@ class StudyScheduleService {
 
   Future<void> updateSchedule(StudySchedule schedule) async {
     await _box.put(schedule.id, schedule);
+    await scheduleAutoNotifications(schedule);
   }
 
   Future<void> deleteSchedule(String id) async {
     await _box.delete(id);
+    try {
+      await notifications.cancel(id: id.hashCode);
+      await notifications.cancel(id: id.hashCode + 1);
+      await notifications.cancel(id: id.hashCode + 2);
+    } catch (_) {}
   }
 
   Future<void> toggleSchedule(String id) async {
@@ -124,6 +209,7 @@ class StudyScheduleService {
     if (schedule != null) {
       schedule.active = !schedule.active;
       await _box.put(schedule.id, schedule);
+      await scheduleAutoNotifications(schedule);
     }
   }
 
@@ -152,5 +238,7 @@ class StudyScheduleService {
   void dispose() {
     _checkTimer?.cancel();
     _scheduleTriggerController.close();
+    _studyModeStartController.close();
+    _studyModeEndController.close();
   }
 }
