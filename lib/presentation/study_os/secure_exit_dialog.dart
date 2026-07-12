@@ -6,7 +6,9 @@ import '../../blocs/study_os/study_os_bloc.dart';
 import '../../blocs/study_os/study_os_event.dart';
 
 class SecureExitDialog extends StatefulWidget {
-  const SecureExitDialog({super.key});
+  final VoidCallback? onExit;
+
+  const SecureExitDialog({super.key, this.onExit});
 
   @override
   State<SecureExitDialog> createState() => _SecureExitDialogState();
@@ -62,8 +64,12 @@ class _SecureExitDialogState extends State<SecureExitDialog> {
   }
 
   void _exitStudyMode() {
-    context.read<StudyOsBloc>().add(const StudyOsEndSession());
-    Navigator.of(context).pop(); // Dismiss dialog only — StudyModeScreen listener handles navigation
+    if (widget.onExit != null) {
+      widget.onExit!();
+    } else {
+      context.read<StudyOsBloc>().add(const StudyOsEndSession());
+    }
+    Navigator.of(context).pop();
   }
 
   @override

@@ -12,7 +12,10 @@ import '../subjects/subject_list_screen.dart';
 import '../study_os/study_os_home.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool studyMode;
+  final ValueChanged<bool>? onStudyModeToggle;
+
+  const HomeScreen({super.key, this.studyMode = false, this.onStudyModeToggle});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -21,22 +24,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-
-  AppMode _appSideToMode(AppSide side) {
-    switch (side) {
-      case AppSide.school: return AppMode.school;
-      case AppSide.tech: return AppMode.tech;
-      case AppSide.studyOs: return AppMode.studyOs;
-    }
-  }
-
-  AppSide _modeToAppSide(AppMode mode) {
-    switch (mode) {
-      case AppMode.school: return AppSide.school;
-      case AppMode.tech: return AppSide.tech;
-      case AppMode.studyOs: return AppSide.studyOs;
-    }
-  }
 
   @override
   void dispose() {
@@ -48,20 +35,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topInset = widget.studyMode ? 0.0 : MediaQuery.of(context).padding.top;
 
     return BlocBuilder<ContentBloc, ContentState>(
       builder: (context, contentState) {
         return BlocBuilder<ExamBloc, ExamState>(
           builder: (context, examState) {
-            if (contentState.currentSide == AppSide.studyOs) {
-              return const StudyOsHome();
-            }
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -97,9 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                             SchoolTechToggle(
-                              currentMode: _appSideToMode(contentState.currentSide),
+                              currentMode: contentState.currentSide == AppSide.school
+                                  ? AppMode.school
+                                  : AppMode.tech,
                               onToggle: (mode) {
-                                final side = _modeToAppSide(mode);
+                                final side = mode == AppMode.school
+                                    ? AppSide.school
+                                    : AppSide.tech;
                                 context.read<ContentBloc>().add(
                                       ContentSideChanged(side),
                                     );
@@ -108,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // Search Bar (functional)
+                        // Search Bar
                         TextField(
                           controller: _searchController,
                           focusNode: _searchFocusNode,
@@ -160,6 +149,150 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           onChanged: (_) => setState(() {}),
+                        ),
+                        const SizedBox(height: 12),
+                        // Study Mode Toggle
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: widget.studyMode
+                                ? AppColors.studyOs.withValues(alpha: 0.1)
+                                : (isDark ? AppColors.cardDark : AppColors.cardLight),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: widget.studyMode
+                                  ? AppColors.studyOs.withValues(alpha: 0.3)
+                                  : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: widget.studyMode
+                                      ? AppColors.studyOs
+                                      : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.psychology_rounded,
+                                  size: 18,
+                                  color: widget.studyMode ? Colors.white : (isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Study Mode',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: widget.studyMode
+                                            ? AppColors.studyOs
+                                            : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                                      ),
+                                    ),
+                                    Text(
+                                      widget.studyMode
+                                          ? 'Active — distractions blocked'
+                                          : 'Block distractions & stay focused',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch(
+                                value: widget.studyMode,
+                                onChanged: widget.onStudyModeToggle,
+                                activeColor: AppColors.studyOs,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // Study Dashboard card
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.studyOs.withValues(alpha: 0.15),
+                                AppColors.studyOs.withValues(alpha: 0.05),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: AppColors.studyOs.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.studyOs.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.psychology_rounded,
+                                  color: AppColors.studyOs,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Study Dashboard',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.studyOs,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Schedules, pomodoro, analytics, rewards & AI tools',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: isDark
+                                            ? AppColors.textTertiaryDark
+                                            : AppColors.textTertiaryLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const StudyOsHome(),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: AppColors.studyOs,
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

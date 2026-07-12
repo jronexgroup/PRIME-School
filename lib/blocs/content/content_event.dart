@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum AppSide { school, tech, studyOs }
+enum AppSide { school, tech }
 
 abstract class ContentEvent extends Equatable {
   const ContentEvent();

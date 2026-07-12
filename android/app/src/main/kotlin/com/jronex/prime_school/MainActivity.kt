@@ -4,6 +4,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import android.view.View
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -16,8 +17,12 @@ class MainActivity : FlutterActivity() {
     private val PERMISSION_CHANNEL = "com.jronex.prime_school/permissions"
     private val OCR_CHANNEL = "com.jronex.prime_school/ocr"
 
+    private var _lockTaskEngaged = false
+    private var _flutterEngine: FlutterEngine? = null
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        _flutterEngine = flutterEngine
 
         // Study Mode (Lock Task, Immersive Mode)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, STUDY_MODE_CHANNEL)
@@ -27,9 +32,11 @@ class MainActivity : FlutterActivity() {
                         try {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                 startLockTask()
+                                _lockTaskEngaged = true
                             }
                             result.success(true)
                         } catch (e: Exception) {
+                            _lockTaskEngaged = false
                             result.success(false)
                         }
                     }
@@ -38,6 +45,7 @@ class MainActivity : FlutterActivity() {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                                 stopLockTask()
                             }
+                            _lockTaskEngaged = false
                             result.success(true)
                         } catch (e: Exception) {
                             result.success(false)
@@ -52,19 +60,29 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(isLocked)
                     }
+                    "reengageLockTask" -> {
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && _lockTaskEngaged) {
+                                startLockTask()
+                            }
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.success(false)
+                        }
+                    }
                     "setImmersiveMode" -> {
                         val enabled = call.argument<Boolean>("enabled") ?: false
                         if (enabled) {
                             window.decorView.systemUiVisibility = (
-                                android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                                or android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-                                or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                             )
                         } else {
-                            window.decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
+                            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
                         }
                         result.success(true)
                     }
@@ -77,7 +95,6 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "getForegroundApp" -> {
-                        // Requires AccessibilityService to be running
                         result.success(StudyAccessibilityService.lastForegroundPackage)
                     }
                     "goHome" -> {
@@ -227,7 +244,31 @@ class MainActivity : FlutterActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // Called when user presses Home or Recents during study mode
-        // The Flutter side handles distraction detection
+        // User pressed Home or Recents during lock task mode
+        if (_lockTaskEngaged) {
+            // Re-engage lock task to bring user back
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    startLockTask()
+                }
+            } catch (_: Exception) {}
+
+            // Notify Flutter side about the exit attempt
+            _flutterEngine?.dartExecutor?.binaryMessenger?.let {
+                MethodChannel(it, STUDY_MODE_CHANNEL).invokeMethod("onUserLeaveAttempt", null)
+            }
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        // Re-engage lock task when window regains focus
+        if (hasFocus && _lockTaskEngaged) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    startLockTask()
+                }
+            } catch (_: Exception) {}
+        }
     }
 }

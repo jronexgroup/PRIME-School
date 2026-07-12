@@ -10,12 +10,14 @@ import 'providers/theme_provider.dart';
 import 'providers/api_key_provider.dart';
 import 'core/constants/app_colors.dart';
 import 'core/services/ai_service.dart';
+import 'core/services/study_os/study_mode_service.dart';
 import 'presentation/widgets/custom_bottom_nav.dart';
 import 'presentation/home/home_screen.dart';
 import 'presentation/subjects/subject_list_screen.dart';
 import 'presentation/progress/progress_screen.dart';
 import 'presentation/settings/settings_screen.dart';
 import 'presentation/auth/login_screen.dart';
+import 'presentation/study_os/secure_exit_dialog.dart';
 
 class PrimeSchoolApp extends StatelessWidget {
   const PrimeSchoolApp({super.key});
@@ -60,6 +62,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   BottomNavTab _currentTab = BottomNavTab.home;
+  bool _studyMode = false;
 
   @override
   void initState() {
@@ -81,25 +84,124 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  Future<void> _toggleStudyMode(bool enable) async {
+    if (enable) {
+      final service = context.read<StudyModeService>();
+      final success = await service.startStudyMode();
+      if (mounted && success) setState(() => _studyMode = true);
+    } else {
+      _showExitConfirmation();
+    }
+  }
+
+  void _showExitConfirmation() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => SecureExitDialog(onExit: _exitStudyMode),
+    ).then((_) {});
+  }
+
+  void _exitStudyMode() async {
+    final service = context.read<StudyModeService>();
+    await service.endStudyMode();
+    if (mounted) setState(() => _studyMode = false);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      body: _buildBody(),
-      bottomNavigationBar: CustomBottomNav(
-        currentTab: _currentTab,
-        onTabChanged: (tab) {
-          setState(() {
-            _currentTab = tab;
-          });
-        },
+      body: Column(
+        children: [
+          // Study Mode Banner
+          if (_studyMode)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 6,
+                bottom: 8,
+                left: 16,
+                right: 8,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.studyOs,
+                    AppColors.studyOs.withValues(alpha: 0.85),
+                  ],
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.psychology_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Study Mode Active',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          'Distractions blocked · Stay focused',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: _showExitConfirmation,
+                    icon: const Icon(Icons.exit_to_app_rounded, size: 16, color: Colors.white),
+                    label: const Text(
+                      'Exit',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          // Main content
+          Expanded(
+            child: _buildBody(),
+          ),
+        ],
       ),
+      bottomNavigationBar: _studyMode
+          ? null
+          : CustomBottomNav(
+              currentTab: _currentTab,
+              onTabChanged: (tab) {
+                setState(() {
+                  _currentTab = tab;
+                });
+              },
+            ),
     );
   }
 
   Widget _buildBody() {
     switch (_currentTab) {
       case BottomNavTab.home:
-        return const HomeScreen();
+        return HomeScreen(studyMode: _studyMode, onStudyModeToggle: _toggleStudyMode);
       case BottomNavTab.subjects:
         return _buildSubjectsList();
       case BottomNavTab.add:

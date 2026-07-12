@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
-enum AppMode { school, tech, studyOs }
+enum AppMode { school, tech }
 
 class SchoolTechToggle extends StatelessWidget {
   final AppMode currentMode;
@@ -42,15 +42,6 @@ class SchoolTechToggle extends StatelessWidget {
             color: AppColors.tech,
             isDark: isDark,
             onTap: () => onToggle(AppMode.tech),
-          ),
-          const SizedBox(width: 2),
-          _ToggleOption(
-            icon: Icons.psychology_rounded,
-            label: 'Study',
-            isSelected: currentMode == AppMode.studyOs,
-            color: AppColors.warning,
-            isDark: isDark,
-            onTap: () => onToggle(AppMode.studyOs),
           ),
         ],
       ),

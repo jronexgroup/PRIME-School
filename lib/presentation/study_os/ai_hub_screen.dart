@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/study_os/ai_hub_service.dart';
 
@@ -62,7 +63,7 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
     }
 
     final url = AiHubService.tabUrls[tab]!;
-    return _buildWebViewPlaceholder(tab, url, isDark);
+    return _buildWebViewTab(tab, url, isDark);
   }
 
   Widget _buildCoursesHub(bool isDark) {
@@ -91,7 +92,7 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildWebViewPlaceholder(AiHubTab tab, String url, bool isDark) {
+  Widget _buildWebViewTab(AiHubTab tab, String url, bool isDark) {
     return Column(
       children: [
         Container(
@@ -120,18 +121,14 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 40),
                   child: Text(
-                    'This tab opens $url in a secure WebView. '
-                    'Install webview_flutter to enable live browsing.\n\n'
-                    'For now, tap the button below to open in your browser.',
+                    'Open $url in your browser to use this AI tool.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: isDark ? AppColors.textTertiaryDark : AppColors.textTertiaryLight),
                   ),
                 ),
                 const SizedBox(height: 20),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    // Would use url_launcher or webview_flutter
-                  },
+                  onPressed: () => _openUrl(url),
                   icon: const Icon(Icons.open_in_browser_rounded, size: 16),
                   label: const Text('Open in Browser'),
                   style: OutlinedButton.styleFrom(foregroundColor: AppColors.studyOs),
@@ -142,6 +139,13 @@ class _AiHubScreenState extends State<AiHubScreen> with SingleTickerProviderStat
         ),
       ],
     );
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }
 

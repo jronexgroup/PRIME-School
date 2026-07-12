@@ -15,6 +15,9 @@ class StudyModeService {
   final _distractionController = StreamController<int>.broadcast();
   Stream<int> get distractionStream => _distractionController.stream;
 
+  final _leaveAttemptController = StreamController<void>.broadcast();
+  Stream<void> get leaveAttemptStream => _leaveAttemptController.stream;
+
   int _distractionCount = 0;
   int get distractionCount => _distractionCount;
 
@@ -29,6 +32,16 @@ class StudyModeService {
   bool get isFaceDown => _faceDown;
 
   static const _channel = MethodChannel('com.jronex.prime_school/study_mode');
+
+  StudyModeService() {
+    _channel.setMethodCallHandler(_handleMethodCall);
+  }
+
+  Future<void> _handleMethodCall(MethodCall call) async {
+    if (call.method == 'onUserLeaveAttempt') {
+      _leaveAttemptController.add(null);
+    }
+  }
 
   Future<bool> startStudyMode() async {
     if (_state == StudyModeState.active) return true;
@@ -128,10 +141,17 @@ class StudyModeService {
     }
   }
 
+  Future<void> reengageLockTask() async {
+    try {
+      await _channel.invokeMethod('reengageLockTask');
+    } catch (_) {}
+  }
+
   void dispose() {
     _sessionTimer?.cancel();
     _stateController.close();
     _distractionController.close();
     _elapsedController.close();
+    _leaveAttemptController.close();
   }
 }
