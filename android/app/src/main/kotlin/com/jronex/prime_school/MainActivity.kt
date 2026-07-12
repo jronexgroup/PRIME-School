@@ -189,7 +189,7 @@ class MainActivity : FlutterActivity() {
                                 cal.timeInMillis,
                                 System.currentTimeMillis()
                             )
-                            stats != null && stats.isNotEmpty
+                            stats != null && stats.size > 0
                         } else true
                         result.success(granted)
                     }
